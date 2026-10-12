@@ -1,8 +1,30 @@
 import json
+import truststore
 from urllib.request import urlopen
 from pathlib import Path
 from datetime import datetime, timedelta
 
+truststore.inject_into_ssl()      # use the macOS keychain for HTTPS
+
+MAX_OFFSET = 2000 # the API won't go higher than this
+WINDOW_DAYS = 1
+
+OCCUPATIONS = {
+    # IT
+    "2511": "UXKZ_3zZ_ipB",
+    "2512": "DJh5_yyF_hEM",
+    "2514": "D9SL_mtn_vGM",
+
+    # Education
+    "2341": "oQUQ_D11_HPx",
+    "2330": "4KhP_FxL_uZ5",
+    "5312": "XW9L_tA9_WaX",
+
+    # Healthcare
+    "2221": "Z8ci_bBE_tmx",
+    "5321": "jY19_knH_MJp",
+    "5323": "LP4Z_ABV_gRm",
+}
 
 def fetch_ads(url):
     with urlopen(url, timeout=30) as response:
@@ -18,91 +40,93 @@ def build_url(concept_id, start_date, end_date, offset=0):
         "&limit=100" # change limit for more or less
         "&sort=id"
         f"&offset={offset}" # to read ads in chunks
-        f"&published-after={start_date}"
-        f"&published-before={end_date}"
+        f"&published-after={start_date.isoformat()}"
+        f"&published-before={end_date.isoformat()}"
     )
     return url
 
-def download_window(start_date, end_date):
-    window_name = f"{start_date[:10]}_{end_date[:10]}"
-    output_dir = (
-        Path(__file__).resolve().parent
-        / "data"
-        / "collection_2025"
-        / window_name
-    )
+def date_windows(year, window_days=WINDOW_DAYS):
+    """Return the windows covering one year, as (start, end) pairs."""
+    windows = []
+
+    start_date = datetime(year, 1, 1)
+    year_end = datetime(year + 1, 1, 1)
+
+    while start_date < year_end:
+        end_date = min(start_date + timedelta(days=window_days), year_end)
+        windows.append((start_date, end_date))
+        start_date = end_date
+
+    return windows
+
+def window_dir(project_dir, start_date, end_date):
+    """Return the folder for one window, inside its year's collection."""
+    name = f"{start_date.date()}_{end_date.date()}"
+
+    return project_dir / "data" / f"collection_{start_date.year}"/name
+
+def save_ads(ads, output_path):
+    with output_path.open("w", encoding="utf-8") as file:
+        json.dump(ads, file, ensure_ascii=False, indent=2)
+
+def download_code(code, concept_id, start_date, end_date, output_dir):
+    """Download every page for one occupation group in one window."""
+    first = fetch_ads(build_url(concept_id, start_date, end_date, 0))
+    count = first["total"]["value"]
+
+    if count > MAX_OFFSET:
+        raise ValueError(
+            f"{code} {start_date.date()}: {count} records exceeds the "
+            f"offset cap of {MAX_OFFSET}. Use a smaller window."
+        )
+
+    save_ads(first["hits"], output_dir / f"{code}_offset_0.json")
+
+    for offset in range(100, count, 100):
+        page = fetch_ads(build_url(concept_id, start_date, end_date, offset))
+        ads = page["hits"]
+
+        expected = min(100, count - offset)
+
+        if len(ads) != expected:
+            raise ValueError(
+                f"{code} {start_date.date()} offset {offset}: "
+                f"expected {expected} ads, got {len(ads)}"
+            )
+
+        save_ads(ads, output_dir / f"{code}_offset_{offset}.json")
+
+    return count
+
+def download_window(project_dir, start_date, end_date):
+    """Download all occupation groups for one window."""
+    output_dir = window_dir(project_dir, start_date, end_date)
     output_dir.mkdir(parents=True, exist_ok=True)
-    offset = 0
-    for code, concept_id in occupations.items():
-        url = build_url(concept_id, start_date, end_date, offset)
-        data = fetch_ads(url)
-        count = data["total"]["value"]
 
-        ads = data["hits"]
-        
-        if len(ads) != min(100, count):
-            raise ValueError("Unexpected first batch size. Check the download.")
+    for code, concept_id in OCCUPATIONS.items():
+        done_path = output_dir / f"{code}.done"
 
-        if ads:
-            name = ads[0]["occupation_group"]["label"]
-        else:
-            name = "No matching ads"
+        if done_path.exists():
+            continue
 
-        print(code, name, count)
+        count = download_code(code, concept_id, start_date, end_date, output_dir)
 
-        output_path = output_dir / f"{code}_offset_{offset}.json"
+        done_path.write_text("")
 
-        with output_path.open("w", encoding="utf-8") as file:
-            json.dump(ads, file, ensure_ascii=False, indent=2)
-        
-        print("Saved:", len(ads), "ads to", output_path)
-
-        if count > 2000:
-            raise ValueError("Too many matches. Use a smaller date window.")
-
-        for page_offset in range(100, count, 100):
-            url = build_url(concept_id, start_date, end_date, page_offset)
-            page = fetch_ads(url)
-            page_ads = page["hits"]
-
-            expected = min(100, count - page_offset)
-
-            if page["total"]["value"] != count or len(page_ads) != expected:
-                raise ValueError("Unexpected response. Check the download.")
-
-            output_path = output_dir / f"{code}_offset_{page_offset}.json"
-
-            with output_path.open("w", encoding="utf-8") as file:
-                json.dump(page_ads, file, ensure_ascii=False, indent=2)
-
-            print("Saved:", len(page_ads), "ads to", output_path)
+        print(start_date.date(), code, count)
 
 
-occupations = {
-    "2511": "UXKZ_3zZ_ipB",
-    "2512": "DJh5_yyF_hEM",
-    "2514": "D9SL_mtn_vGM",
-    "2341": "oQUQ_D11_HPx",
-    "2342": "CFW8_eBa_NaV",
-    "2343": "5ek3_Cgq_WeZ",
-    "2224": "oj4c_P4b_cja",
-    "2225": "bEDv_SL7_VrL",
-    "2228": "dyWo_sDb_MLQ",
-}
+def main():
+    first_year = int(input("Enter the first year: "))
+    last_year = int(input("Enter the last year: "))
 
-#output_dir = Path(__file__).resolve().parent / "data" / "raw"
-current_start = datetime(2025, 1, 1)
-year_end = datetime(2026, 1, 1)
+    project_dir = Path(__file__).resolve().parent
 
-while current_start < year_end:
-    current_end = min(
-        current_start + timedelta(days=7),
-        year_end
-    )
+    for year in range(first_year, last_year + 1):
+        for start_date, end_date in date_windows(year):
+            download_window(project_dir, start_date, end_date)
 
-    download_window(
-        current_start.isoformat(),
-        current_end.isoformat()
-    )
 
-    current_start = current_end
+if __name__ == "__main__":
+    main()
+
