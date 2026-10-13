@@ -5,6 +5,7 @@ __pycache__/
 download.log
 language.log
 duplicates.log
+inspect.log
 
 # Advertisement data and review sheets. Never commit.
 data/
@@ -12,3 +13,5 @@ reports/
 
 # Excluded for now; quotes some advertisement text.
 docs/
+run_2023_2026.log
+employers.log
