@@ -170,16 +170,46 @@ def describe_loss_per_label(records, budget):
 def main():
     hf_logging.set_verbosity_error()
 
-    year = input("Enter the collection period (for example 2025): ").strip()
+    period = input("Enter the period (for example 2023_2026): ").strip()
 
     project_dir = Path(__file__).resolve().parent
-    candidate_path = project_dir / "data" / f"candidates_{year}.json"
+    candidate_path = project_dir / "data" / f"candidates_{period}.json"
 
     if not candidate_path.exists():
         raise FileNotFoundError(f"No candidate file at {candidate_path}")
 
-    # Tokenising is slow, so the token measurements use a sample.
-    texts = [record["text"] for record in load_records(candidate_path)]
+    with candidate_path.open("r", encoding="utf-8") as file:
+        candidates = json.load(file)
+
+    # If the splits exist, measure the TRAIN split only. That is the text the
+    # models will actually be fitted on, and it is a filtered, employer-capped
+    # subset of the candidates, so its lengths can differ from the whole corpus.
+    splits_path = project_dir / "data" / f"splits_{period}.json"
+
+    if splits_path.exists():
+        from make_splits import check_alignment
+
+        with splits_path.open("r", encoding="utf-8") as file:
+            splits = json.load(file)
+
+        # Stop if the candidate file has been rebuilt since the splits were made.
+        check_alignment(splits, candidates)
+
+        train = splits["splits"]["train"]
+        records = [candidates[unit["position"]] for unit in train]
+        # Labels live in the splits, not the candidate records we just pulled.
+        for record, unit in zip(records, train):
+            record["label"] = unit["label"]
+        print(f"measuring the TRAIN split: {len(records):,} texts")
+    else:
+        records = candidates
+        print(f"no splits file, measuring all candidates: {len(records):,} texts")
+
+    print()
+
+    # Tokenising is slow, so the token measurements use a sample of those.
+    sample = random.Random(42).sample(records, min(2000, len(records)))
+    texts = [record["text"] for record in sample]
 
     tokenizers = {}
     for name, model_id in MODELS.items():
@@ -191,10 +221,8 @@ def main():
     budget = describe_word_budgets(texts, tokenizers)
 
     if budget is not None:
-        # Counting words is fast, so use every record here. The small labels
-        # have too few texts in a sample to be readable.
-        all_records = load_records(candidate_path, sample_size=0)
-        describe_loss_per_label(all_records, budget)
+        # Counting words is fast, so use every record for the per-label table.
+        describe_loss_per_label(records, budget)
 
 
 if __name__ == "__main__":
