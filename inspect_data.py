@@ -20,19 +20,34 @@ def save_json(data, file_path):
     with file_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
 
-def prepare_candidates(data_dir, start_date, end_date):
+def period_name(first_year, last_year):
+    """Return the text used in output filenames."""
+    if first_year == last_year:
+        return str(first_year)
+
+    return f"{first_year}_{last_year}"
+
+def prepare_candidates(data_dirs, start_date, end_date):
     seen_ids = set()
     duplicate_id_count = 0
     empty_text_count = 0
 
-    files = sorted(data_dir.rglob("*.json"))
+    files = []
+
+    for data_dir in data_dirs:
+        if not data_dir.is_dir():
+            raise FileNotFoundError(f"Missing collection folder: {data_dir}")
+
+        files += data_dir.rglob("*.json")
+
+    files = sorted(files)
 
     if not files:
-        raise FileNotFoundError(f"No JSON files found in {data_dir}")
+        raise FileNotFoundError(f"No JSON files found in {data_dirs}")
 
     total_ads = 0
 
-    outside_year_count = 0
+    outside_period_count = 0
 
     text_labels = {}
     text_ad_ids = {}
@@ -49,7 +64,7 @@ def prepare_candidates(data_dir, start_date, end_date):
             )
 
             if not start_date <= publication_date < end_date:
-                outside_year_count += 1
+                outside_period_count += 1
                 continue
             ad_id = ad["id"]
 
@@ -95,9 +110,10 @@ def prepare_candidates(data_dir, start_date, end_date):
 
 
 
+    print("Collections read:", ", ".join(d.name for d in data_dirs))
     print("Files loaded:", len(files))
     print("Total records:", total_ads)
-    print("Records outside the selected period:", outside_year_count)
+    print("Records outside the selected period:", outside_period_count)
     print("Unique advertisement IDs in the selected period:", len(seen_ids))
     print("Repeated ID occurrences:", duplicate_id_count)
     print("Advertisements with empty text:", empty_text_count)
@@ -112,11 +128,12 @@ def prepare_candidates(data_dir, start_date, end_date):
     summary = {
         "period_start_inclusive": start_date.isoformat(),
         "period_end_exclusive": end_date.isoformat(),
+        "collections": [d.name for d in data_dirs],
         "files_loaded": len(files),
         "raw_records": total_ads,
-        "records_outside_year": outside_year_count,
+        "records_outside_period": outside_period_count,
         "repeated_id_occurrences": duplicate_id_count,
-        "unique_ids_in_year": len(seen_ids),
+        "unique_ids_in_period": len(seen_ids),
         "empty_text_ads": empty_text_count,
         "repeated_text_occurrences": duplicate_text_count,
         "distinct_nonempty_texts": len(text_labels),
@@ -127,22 +144,28 @@ def prepare_candidates(data_dir, start_date, end_date):
     return candidate_ads, summary
 
 def main():
-    year = int(input("Enter the collection year: "))
+    first_year = int(input("Enter the first year: "))
+    last_year = int(input("Enter the last year: "))
 
     project_dir = Path(__file__).resolve().parent
-    data_dir = project_dir / "data" / f"collection_{year}"
+    period = period_name(first_year, last_year)
 
-    start_date = datetime(year, 1, 1)
-    end_date = datetime(year + 1, 1, 1)
+    data_dirs = [
+        project_dir / "data" / f"collection_{year}"
+        for year in range(first_year, last_year + 1)
+    ]
+
+    start_date = datetime(first_year, 1, 1)
+    end_date = datetime(last_year + 1, 1, 1)
 
     candidate_ads, summary = prepare_candidates(
-        data_dir,
+        data_dirs,
         start_date,
         end_date,
     )
 
-    report_path = project_dir / "reports" / f"inspection_{year}.json"
-    candidate_path = project_dir / "data" / f"candidates_{year}.json"
+    report_path = project_dir / "reports" / f"inspection_{period}.json"
+    candidate_path = project_dir / "data" / f"candidates_{period}.json"
 
     save_json(summary, report_path)
     save_json(candidate_ads, candidate_path)

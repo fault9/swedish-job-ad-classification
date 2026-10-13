@@ -138,12 +138,15 @@ def build_report(annotations):
 
 
 def main():
-    year = int(input("Enter the collection year: "))
+    period = input("Enter the period (for example 2023_2025): ").strip()
 
     project_dir = Path(__file__).resolve().parent
-    candidate_path = project_dir / "data" / f"candidates_{year}.json"
-    annotation_path = project_dir / "data" / f"language_{year}.json"
-    report_path = project_dir / "reports" / f"language_{year}.json"
+    candidate_path = project_dir / "data" / f"candidates_{period}.json"
+    annotation_path = project_dir / "data" / f"language_{period}.json"
+    report_path = project_dir / "reports" / f"language_{period}.json"
+
+    if not candidate_path.exists():
+        raise FileNotFoundError(f"No candidate file at {candidate_path}")
 
     if annotation_path.exists():
         with annotation_path.open("r", encoding="utf-8") as file:

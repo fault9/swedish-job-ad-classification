@@ -47,12 +47,14 @@ def show_case(position, record, annotation):
 
 
 def main():
+    period = input("Enter the period (for example 2023_2025): ").strip()
+
     project_dir = Path(__file__).resolve().parent
 
-    with (project_dir / "data" / "candidates_2025.json").open(encoding="utf-8") as file:
+    with (project_dir / "data" / f"candidates_{period}.json").open(encoding="utf-8") as file:
         candidates = json.load(file)
 
-    with (project_dir / "data" / "language_2025.json").open(encoding="utf-8") as file:
+    with (project_dir / "data" / f"language_{period}.json").open(encoding="utf-8") as file:
         annotations = json.load(file)
 
     sections = [
