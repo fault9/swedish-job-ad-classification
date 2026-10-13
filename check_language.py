@@ -37,23 +37,30 @@ def summarize_spans(spans):
 
 
 
-def annotate_candidates(candidates, detector):
+def annotate_candidates(candidates, detector, batch_size=10000):
     """Detect languages for all candidate texts and return one annotation per text."""
-
-    texts = [record["text"] for record in candidates]
-
-    results = detector.detect_multiple_languages_in_parallel_of(texts)
 
     annotations = []
 
-    for record, spans in zip(candidates, results):
-        summary = summarize_spans(spans)
-        annotation = {
-            "label": record["label"],
-            "source_ad_ids": record["source_ad_ids"],
-            **summary,
-        }
-        annotations.append(annotation)
+    # In batches so that only one batch of span results sits in memory at a time,
+    # and so a long run prints progress instead of going silent.
+    for start in range(0, len(candidates), batch_size):
+        batch = candidates[start:start + batch_size]
+
+        texts = [record["text"] for record in batch]
+
+        results = detector.detect_multiple_languages_in_parallel_of(texts)
+
+        for record, spans in zip(batch, results):
+            summary = summarize_spans(spans)
+            annotation = {
+                "label": record["label"],
+                "source_ad_ids": record["source_ad_ids"],
+                **summary,
+            }
+            annotations.append(annotation)
+
+        print("annotated", len(annotations), "of", len(candidates), flush=True)
 
     return annotations
 
