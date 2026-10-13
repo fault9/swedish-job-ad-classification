@@ -7,6 +7,8 @@ from datasketch import MinHash, MinHashLSH
 
 from inspect_data import save_json
 
+from paths import PROJECT_DIR
+
 THRESHOLDS = [0.6, 0.7, 0.8, 0.9]
 PRIMARY_THRESHOLD = 0.8
 SIZE_BANDS = [(1, 1), (2, 2), (3, 5), (6, 20), (21, 100), (101, 10 ** 9)]
@@ -144,7 +146,7 @@ def summarise_clusters(cluster_ids, labels):
 def main():
     period = input("Enter the period (for example 2023_2025): ").strip()
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
     candidate_path = project_dir / "data" / f"candidates_{period}.json"
     cluster_path = project_dir / "data" / f"clusters_{period}.json"
     report_path = project_dir / "reports" / f"duplicates_{period}.json"

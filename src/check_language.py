@@ -4,6 +4,8 @@ from pathlib import Path
 from inspect_data import save_json
 from lingua import LanguageDetectorBuilder
 
+from paths import PROJECT_DIR
+
 def summarize_spans(spans): 
     """Turn one texts detected spans into summary dictionary of language shares."""
 
@@ -147,7 +149,7 @@ def build_report(annotations):
 def main():
     period = input("Enter the period (for example 2023_2025): ").strip()
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
     candidate_path = project_dir / "data" / f"candidates_{period}.json"
     annotation_path = project_dir / "data" / f"language_{period}.json"
     report_path = project_dir / "reports" / f"language_{period}.json"

@@ -2,10 +2,7 @@
 __pycache__/
 *.pyc
 .DS_Store
-download.log
-language.log
-duplicates.log
-inspect.log
+logs/
 
 # Advertisement data and review sheets. Never commit.
 data/
@@ -13,6 +10,3 @@ reports/
 
 # Excluded for now; quotes some advertisement text.
 docs/
-run_2023_2026.log
-employers.log
-backup.log

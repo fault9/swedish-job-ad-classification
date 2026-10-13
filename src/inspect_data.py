@@ -3,6 +3,8 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter
 
+from paths import PROJECT_DIR
+
 def load_ads(file_path):
     with file_path.open("r", encoding="utf-8") as file:
         ads = json.load(file)
@@ -147,7 +149,7 @@ def main():
     first_year = int(input("Enter the first year: "))
     last_year = int(input("Enter the last year: "))
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
     period = period_name(first_year, last_year)
 
     data_dirs = [

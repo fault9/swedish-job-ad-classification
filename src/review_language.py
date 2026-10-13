@@ -4,6 +4,8 @@ from pathlib import Path
 
 from check_language import SHARE_BANDS, WORD_BANDS, share_bucket, word_bucket
 
+from paths import PROJECT_DIR
+
 def group_positions_by_band(annotations, bucket_of, field):
     """Return {band_name: [positions]}, using bucket_of on the given field."""
 
@@ -49,7 +51,7 @@ def show_case(position, record, annotation):
 def main():
     period = input("Enter the period (for example 2023_2025): ").strip()
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
 
     with (project_dir / "data" / f"candidates_{period}.json").open(encoding="utf-8") as file:
         candidates = json.load(file)

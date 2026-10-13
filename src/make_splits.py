@@ -53,6 +53,8 @@ from pathlib import Path
 
 from inspect_data import save_json
 
+from paths import PROJECT_DIR
+
 CAP = 20                  # most clusters any one employer may contribute to a label
 MIN_WORDS = 50            # shorter texts are fragments, not advertisements
 LANGUAGE = "SWEDISH"
@@ -350,7 +352,7 @@ def report(assignment, name_order):
 def main():
     period = input("Enter the period (for example 2023_2026): ").strip()
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
 
     candidate_path = project_dir / "data" / f"candidates_{period}.json"
     candidates = load_json(candidate_path)

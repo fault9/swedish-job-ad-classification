@@ -4,6 +4,8 @@ from urllib.request import urlopen
 from pathlib import Path
 from datetime import datetime, timedelta
 
+from paths import PROJECT_DIR
+
 truststore.inject_into_ssl()      # use the macOS keychain for HTTPS
 
 MAX_OFFSET = 2000 # the API won't go higher than this
@@ -120,7 +122,7 @@ def main():
     first_year = int(input("Enter the first year: "))
     last_year = int(input("Enter the last year: "))
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
 
     for year in range(first_year, last_year + 1):
         for start_date, end_date in date_windows(year):

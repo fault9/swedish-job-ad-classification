@@ -13,6 +13,8 @@ from pathlib import Path
 from transformers import AutoTokenizer
 from transformers.utils import logging as hf_logging
 
+from paths import PROJECT_DIR
+
 MODELS = {
     "KB-BERT": "KB/bert-base-swedish-cased",
     "mBERT": "google-bert/bert-base-multilingual-cased",
@@ -172,7 +174,7 @@ def main():
 
     period = input("Enter the period (for example 2023_2026): ").strip()
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
     candidate_path = project_dir / "data" / f"candidates_{period}.json"
 
     if not candidate_path.exists():

@@ -20,6 +20,8 @@ from pathlib import Path
 
 from inspect_data import save_json
 
+from paths import PROJECT_DIR
+
 
 def employers_by_ad_id(data_dirs):
     """Build a lookup from advertisement id to employer id.
@@ -87,7 +89,7 @@ def main():
     first_year = int(input("Enter the first year: "))
     last_year = int(input("Enter the last year: "))
 
-    project_dir = Path(__file__).resolve().parent
+    project_dir = PROJECT_DIR
     period = f"{first_year}_{last_year}"
 
     data_dirs = [
