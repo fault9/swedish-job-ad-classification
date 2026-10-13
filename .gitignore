@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 download.log
+language.log
 
 # Advertisement data and review sheets. Never commit.
 data/
@@ -10,4 +11,3 @@ reports/
 
 # Excluded for now; quotes some advertisement text.
 docs/
-language.log
