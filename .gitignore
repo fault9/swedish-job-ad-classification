@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 download.log
 language.log
+duplicates.log
 
 # Advertisement data and review sheets. Never commit.
 data/
