@@ -8,6 +8,7 @@ number of words that still fits in both.
 
 import json
 import random
+from collections import defaultdict
 from pathlib import Path
 
 from transformers import AutoTokenizer
@@ -143,10 +144,11 @@ def describe_loss_per_label(records, budget):
     """Print how many texts each label loses to the budget."""
     print(f"=== Texts longer than the {budget}-word budget, per label ===")
 
-    per_label = {}
+    # Each label gets [total, truncated]. The lambda is the starting value.
+    per_label = defaultdict(lambda: [0, 0])
     for record in records:
         words = len(record["text"].split())
-        counts = per_label.setdefault(record["label"], [0, 0])
+        counts = per_label[record["label"]]
         counts[0] += 1
         if words > budget:
             counts[1] += 1

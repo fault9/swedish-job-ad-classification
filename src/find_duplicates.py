@@ -1,7 +1,7 @@
 import json
 import time
 from pathlib import Path
-from collections import Counter
+from collections import Counter, defaultdict
 
 from datasketch import MinHash, MinHashLSH
 
@@ -68,11 +68,11 @@ def find_duplicate_pairs(signatures, threshold=0.8, num_perm=256):
 def cluster_positions(pairs, n_texts):
     """Give every position a cluster id, joining positions linked by pairs."""
 
-    neighbours = {}
+    neighbours = defaultdict(set)
 
     for first, second in pairs:
-        neighbours.setdefault(first, set()).add(second)
-        neighbours.setdefault(second, set()).add(first)
+        neighbours[first].add(second)
+        neighbours[second].add(first)
 
     cluster_ids = [None] * n_texts
     next_id = 0
@@ -103,10 +103,10 @@ def cluster_positions(pairs, n_texts):
 def summarise_clusters(cluster_ids, labels):
     """Count clusters, size bands and label purity for one threshold."""
 
-    members = {}
+    members = defaultdict(list)
 
     for position, cluster_id in enumerate(cluster_ids):
-        members.setdefault(cluster_id, []).append(position)
+        members[cluster_id].append(position)
 
     sizes = [len(positions) for positions in members.values()]
 
@@ -121,10 +121,10 @@ def summarise_clusters(cluster_ids, labels):
         if len(positions) > 1 and len({labels[p] for p in positions}) > 1
     )
 
-    label_clusters = {}
+    label_clusters = defaultdict(set)
 
     for position, cluster_id in enumerate(cluster_ids):
-        label_clusters.setdefault(labels[position], set()).add(cluster_id)
+        label_clusters[labels[position]].add(cluster_id)
 
     clusters_per_label = {
         label: len(ids) for label, ids in sorted(label_clusters.items())

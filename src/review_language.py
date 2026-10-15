@@ -1,5 +1,6 @@
 import json
 import random
+from collections import defaultdict
 from pathlib import Path
 
 from check_language import SHARE_BANDS, WORD_BANDS, share_bucket, word_bucket
@@ -9,15 +10,13 @@ from paths import PROJECT_DIR
 def group_positions_by_band(annotations, bucket_of, field):
     """Return {band_name: [positions]}, using bucket_of on the given field."""
 
-    positions_by_band = {}
+    positions_by_band = defaultdict(list)
 
     for position, annotation in enumerate(annotations):
         band = bucket_of(annotation[field])
-        if band not in positions_by_band:
-            positions_by_band[band] = []
         positions_by_band[band].append(position)
 
-    return positions_by_band
+    return dict(positions_by_band)
 
 def select_review_sample(annotations, bucket_of, field, bands, per_band=8, seed=42):
     """Pick a reproducible sample of positions from each band, in band order."""

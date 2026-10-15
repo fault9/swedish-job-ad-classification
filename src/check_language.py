@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 import json
 from pathlib import Path
 from inspect_data import save_json
@@ -105,14 +105,14 @@ def word_bucket(n_words):
 def nest_counts(flat_counts):
     """Turn {(outer, inner): count} into {outer: {inner: count}}."""
 
-    result = {}
+    result = defaultdict(dict)
 
     for (outer, inner), count in flat_counts.items():
-        if outer not in result:
-            result[outer] = {}
         result[outer][inner] = count
 
-    return result
+    # Hand back a plain dict, so nothing downstream can accidentally create
+    # entries just by looking for a label that is not there.
+    return dict(result)
 
 def build_report(annotations):
     """Count the swedish_share bands and the dominant languages"""
