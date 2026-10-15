@@ -252,6 +252,64 @@ def load_units(project_dir, period, name):
     return splits["splits"][name]
 
 
+def load_fold(project_dir, period, fold_number, budget=WORD_BUDGET,
+              strategy="head"):
+    """Load one cross-validation fold: its test part and its training part.
+
+    Returns four lists: test texts, test labels, train texts, train labels.
+
+    "Test" is the one fold asked for. "Train" is every OTHER fold joined
+    together. With five folds that means 2,880 test and 11,520 train, and
+    because the folds are employer-disjoint no employer appears on both sides.
+
+    The units are returned as well, so predictions can be traced back to
+    advertisements afterwards.
+    """
+    data_dir = Path(project_dir) / "data"
+
+    with (data_dir / f"candidates_{period}.json").open(encoding="utf-8") as file:
+        candidates = json.load(file)
+
+    with (data_dir / f"folds_{period}.json").open(encoding="utf-8") as file:
+        saved = json.load(file)
+
+    if len(candidates) != saved["candidate_count"]:
+        raise ValueError(
+            f"Candidate file has {len(candidates):,} records but the folds were "
+            f"built from {saved['candidate_count']:,}. Rebuild the folds."
+        )
+
+    def to_texts(units):
+        texts = []
+        for unit in units:
+            # Spot-check that the position still means what it did.
+            actual = candidates[unit["position"]]["source_ad_ids"][0]
+            if actual != unit["ad_id"]:
+                raise ValueError(
+                    f"Position {unit['position']} should be advertisement "
+                    f"{unit['ad_id']} but the candidate file has {actual}."
+                )
+            texts.append(truncate_text(candidates[unit["position"]]["text"],
+                                       budget, strategy))
+        return texts
+
+    test_units = saved["folds"][str(fold_number)]
+
+    train_units = []
+    for number, units in saved["folds"].items():
+        if number != str(fold_number):
+            train_units += units
+
+    return {
+        "test_texts": to_texts(test_units),
+        "test_labels": [u["label"] for u in test_units],
+        "test_units": test_units,
+        "train_texts": to_texts(train_units),
+        "train_labels": [u["label"] for u in train_units],
+        "n_folds": saved["n_folds"],
+    }
+
+
 def describe(texts, labels, name):
     """Print a one-line summary of a loaded split."""
     counts = {}
