@@ -26,6 +26,7 @@ What gets reported, and why each one is here:
                     that any score has something to be compared against.
 """
 
+import json
 from collections import Counter
 
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
@@ -90,6 +91,43 @@ def majority_baseline(true_labels):
     most_common = Counter(true_labels).most_common(1)[0][1]
 
     return most_common / len(true_labels)
+
+
+def save_predictions(units, true_labels, predicted_labels, path, method, split):
+    """Write one row per advertisement: what it was, what the method said.
+
+    Every method must write this file. Two analyses depend on it and neither is
+    possible from aggregate scores alone:
+
+      - whether the three methods fail on the SAME advertisements, which is how
+        we tell a shared limit in the data from genuine differences between
+        methods
+      - whether the errors sit in the off-type occupations inside a label, for
+        example the 15.3% of label 2512 that is Projektledare, IT rather than a
+        developer
+
+    The ad_id makes each row joinable back to the raw advertisement, so the
+    occupation title can be looked up later without re-running anything.
+    """
+    rows = [
+        {
+            "ad_id": unit["ad_id"],
+            "cluster": unit["cluster"],
+            "employer": unit["employer"],
+            "true": true_label,
+            "predicted": predicted,
+            "correct": true_label == predicted,
+        }
+        for unit, true_label, predicted in zip(units, true_labels, predicted_labels)
+    ]
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("w", encoding="utf-8") as file:
+        json.dump({"method": method, "split": split, "n": len(rows),
+                   "predictions": rows}, file, ensure_ascii=False, indent=2)
+
+    return path
 
 
 def report(true_labels, predicted_labels, title="results"):

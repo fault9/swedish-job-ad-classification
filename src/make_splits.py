@@ -220,7 +220,7 @@ def cap_per_employer(units, cap, generator):
     return kept
 
 
-def split_employers(units, target_per_label, generator):
+def split_employers(units, target_per_label, generator, blocked_from_test=()):
     """Divide the data into train, validation and test without splitting employers.
 
     The important idea: employers move as whole blocks. If an employer has 12
@@ -270,7 +270,14 @@ def split_employers(units, target_per_label, generator):
             for employer in list(employers):
                 if len(filled[name]) >= wanted[name]:
                     break
-                filled[name] += by_label[label][employer]
+                group = by_label[label][employer]
+                # Pilot advertisements must not reach the test set. Skip the
+                # employer entirely while filling test, so it stays available
+                # for val or train instead of being discarded.
+                if name == "test" and any(u["cluster"] in blocked_from_test
+                                          for u in group):
+                    continue
+                filled[name] += group
                 # Remove it so no later split can take the same employer.
                 employers.remove(employer)
             # The last employer added usually overshoots, so cut the extra off.
@@ -280,6 +287,43 @@ def split_employers(units, target_per_label, generator):
             assignment[name] += filled[name]
 
     return assignment
+
+
+def pilot_clusters(data_dir, annotations, cluster_ids):
+    """Clusters containing an advertisement used in the label-selection pilot.
+
+    Those 9,920 advertisements were read to decide WHICH nine labels to use, so
+    they are design data. An advertisement that helped choose the task cannot
+    also be used to judge how well the task was solved, so these clusters are
+    kept out of both test sets. They stay available for training, which is
+    fine: the pilot informed the design, not the model.
+
+    The whole cluster is excluded, not just the one advertisement, because the
+    other members are near-identical to it.
+
+    Returns an empty set if no pilot file exists.
+    """
+    pilot_files = sorted(data_dir.glob("pilot_ids_*.json"))
+
+    if not pilot_files:
+        return set()
+
+    pilot_ids = set()
+
+    for path in pilot_files:
+        with path.open("r", encoding="utf-8") as file:
+            saved = json.load(file)
+        for ids in saved["ids_by_group"].values():
+            pilot_ids.update(ids)
+
+    blocked = set()
+
+    for position, annotation in enumerate(annotations):
+        # A text can come from several advertisements; any one of them is enough.
+        if pilot_ids.intersection(annotation["source_ad_ids"]):
+            blocked.add(cluster_ids[position])
+
+    return blocked
 
 
 def trim_to_equal(assignment, name_order):
@@ -397,7 +441,11 @@ def main():
     print("balanced size per label:", f"{target:,}")
     print()
 
-    assignment = split_employers(units, target, generator)
+    blocked = pilot_clusters(project_dir / "data", annotations, cluster_ids)
+    print(f"clusters barred from the test sets (label-selection pilot): {len(blocked):,}")
+    print()
+
+    assignment = split_employers(units, target, generator, blocked)
     assignment = trim_to_equal(assignment, ["train", "val", "test"])
     report(assignment, ["train", "val", "test"])
 
@@ -423,6 +471,12 @@ def main():
     print()
     print(f"non-Swedish units: {before:,} -> {len(other_units):,} "
           f"after removing employers seen in train or val")
+
+    # Same rule as the Swedish test set: no pilot advertisements.
+    before = len(other_units)
+    other_units = [u for u in other_units if u["cluster"] not in blocked]
+    print(f"                   {before:,} -> {len(other_units):,} "
+          f"after removing label-selection pilot clusters")
 
     # Match the Swedish test size so the two are equally precise.
     test_size = int(target * PROPORTIONS["test"])
