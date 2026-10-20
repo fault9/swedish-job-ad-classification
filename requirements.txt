@@ -1,6 +1,7 @@
 annotated-doc==0.0.5
 anyio==4.15.1
 click==8.5.0
+cloudpickle==3.1.2
 datasketch==2.0.0
 filelock==4.1.1
 fsspec==2026.9.0
@@ -10,9 +11,11 @@ httpcore2==2.13.1
 httpx2==2.13.1
 huggingface_hub==2.2.0
 idna==3.20
+joblib==1.6.0
 lingua-language-detector==2.2.0
 markdown-it-py==4.2.0
 mdurl==0.1.2
+narwhals==2.27.1
 numpy==2.5.4
 packaging==26.3
 Pygments==2.21.0
@@ -20,8 +23,10 @@ PyYAML==6.0.3
 regex==2026.9.29
 rich==15.0.0
 safetensors==0.8.0
+scikit-learn==1.9.1
 scipy==1.18.1
 shellingham==1.5.4
+threadpoolctl==3.7.0
 tokenizers==0.23.3
 tqdm==4.70.1
 transformers==5.19.0
