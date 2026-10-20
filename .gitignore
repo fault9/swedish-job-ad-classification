@@ -10,3 +10,6 @@ reports/
 
 # Excluded for now; quotes some advertisement text.
 docs/
+
+# Local notes. Not part of the project.
+CLAUDE.md
