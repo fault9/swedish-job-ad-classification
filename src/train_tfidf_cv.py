@@ -39,7 +39,7 @@ from dataset import load_fold
 from evaluate import (bootstrap_macro_f1, family_errors, macro_f1,
                       report, save_predictions)
 from inspect_data import save_json
-from paths import PROJECT_DIR, REPORTS_DIR
+from paths import PROJECT_DIR, RESULTS_DIR
 from train_tfidf import build_model
 
 PERIOD = "2023_2026"
@@ -109,7 +109,7 @@ def main():
 
         save_predictions(
             data["test_units"], data["test_labels"], predictions,
-            REPORTS_DIR / f"predictions_tfidf_fold{fold_number}_{PERIOD}.json",
+            RESULTS_DIR / f"predictions_tfidf_fold{fold_number}_{PERIOD}.json",
             method="tfidf_logreg", split=f"fold{fold_number}",
         )
 
@@ -152,11 +152,11 @@ def main():
                         "families", "confusion_matrix", "labels")},
             "pooled_interval": interval,
         },
-        REPORTS_DIR / f"tfidf_cv_{PERIOD}.json",
+        RESULTS_DIR / f"tfidf_cv_{PERIOD}.json",
     )
 
     print()
-    print("Saved:", REPORTS_DIR / f"tfidf_cv_{PERIOD}.json")
+    print("Saved:", RESULTS_DIR / f"tfidf_cv_{PERIOD}.json")
     print(f"Saved: {N_FOLDS} per-fold prediction files")
 
 

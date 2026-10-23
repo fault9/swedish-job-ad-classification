@@ -32,7 +32,7 @@ from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
 from dataset import load_fold
 from evaluate import bootstrap_macro_f1, macro_f1, report, save_predictions
 from inspect_data import save_json
-from paths import PROJECT_DIR, REPORTS_DIR
+from paths import PROJECT_DIR, RESULTS_DIR
 
 PERIOD = "2023_2026"
 N_FOLDS = 5
@@ -197,7 +197,7 @@ def run_method(method, seed, device):
 
         save_predictions(
             data["test_units"], data["test_labels"], predictions,
-            REPORTS_DIR / f"predictions_{method}_seed{seed}_fold{fold_number}"
+            RESULTS_DIR / f"predictions_{method}_seed{seed}_fold{fold_number}"
                           f"_{PERIOD}.json",
             method=method, split=f"fold{fold_number}",
         )
@@ -258,7 +258,7 @@ def run_method(method, seed, device):
 
 
 def results_path(method, seed):
-    return REPORTS_DIR / f"{method}_seed{seed}_cv_{PERIOD}.json"
+    return RESULTS_DIR / f"{method}_seed{seed}_cv_{PERIOD}.json"
 
 
 def main():

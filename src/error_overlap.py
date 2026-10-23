@@ -11,7 +11,7 @@ results use seed 1.
 import json
 from collections import Counter
 
-from paths import REPORTS_DIR
+from paths import RESULTS_DIR
 
 PERIOD = "2023_2026"
 N_FOLDS = 5
@@ -37,7 +37,7 @@ def load_rows(file_pattern):
     # Each ad sits in exactly one fold, so the five files together hold
     # every ad once.
     for fold in range(N_FOLDS):
-        path = REPORTS_DIR / file_pattern.format(fold)
+        path = RESULTS_DIR / file_pattern.format(fold)
         with path.open(encoding="utf-8") as file:
             for row in json.load(file)["predictions"]:
                 rows[row["ad_id"]] = row

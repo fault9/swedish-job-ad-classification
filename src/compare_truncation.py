@@ -36,7 +36,7 @@ from sklearn.metrics import f1_score
 
 from dataset import load_split
 from inspect_data import save_json
-from paths import PROJECT_DIR, REPORTS_DIR
+from paths import PROJECT_DIR, RESULTS_DIR
 from train_tfidf import build_model
 
 PERIOD = "2023_2026"
@@ -136,10 +136,10 @@ def main():
 
     save_json({"period": PERIOD, "ngram": list(NGRAM), "min_df": MIN_DF,
                "C": C_VALUE, "rows": rows, "best": best},
-              REPORTS_DIR / f"truncation_{PERIOD}.json")
+              RESULTS_DIR / f"truncation_{PERIOD}.json")
 
     print()
-    print("Saved:", REPORTS_DIR / f"truncation_{PERIOD}.json")
+    print("Saved:", RESULTS_DIR / f"truncation_{PERIOD}.json")
     print("The test set has not been touched.")
 
 

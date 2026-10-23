@@ -41,7 +41,7 @@ from collections import Counter, defaultdict
 from dataset import load_fold
 from evaluate import bootstrap_macro_f1, macro_f1, report, save_predictions
 from inspect_data import save_json
-from paths import PROJECT_DIR, REPORTS_DIR
+from paths import PROJECT_DIR, RESULTS_DIR
 
 PERIOD = "2023_2026"
 N_FOLDS = 5
@@ -183,7 +183,7 @@ def main():
 
         save_predictions(
             data["test_units"], data["test_labels"], predictions,
-            REPORTS_DIR / f"predictions_keyword_fold{fold_number}_{PERIOD}.json",
+            RESULTS_DIR / f"predictions_keyword_fold{fold_number}_{PERIOD}.json",
             method="keyword", split=f"fold{fold_number}",
         )
 
@@ -220,11 +220,11 @@ def main():
                         "families", "confusion_matrix", "labels")},
             "pooled_interval": interval,
         },
-        REPORTS_DIR / f"keyword_cv_{PERIOD}.json",
+        RESULTS_DIR / f"keyword_cv_{PERIOD}.json",
     )
 
     print()
-    print("Saved:", REPORTS_DIR / f"keyword_cv_{PERIOD}.json")
+    print("Saved:", RESULTS_DIR / f"keyword_cv_{PERIOD}.json")
 
 
 if __name__ == "__main__":

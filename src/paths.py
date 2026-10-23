@@ -18,3 +18,9 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_DIR / "data"
 REPORTS_DIR = PROJECT_DIR / "reports"
 DOCS_DIR = PROJECT_DIR / "docs"
+
+# Each version is one complete set of experiment results in its own folder,
+# so a new experiment never overwrites an old one. Change this to start a
+# new version. v1 is the first 200 words of each advertisement.
+VERSION = "v1"
+RESULTS_DIR = REPORTS_DIR / VERSION
