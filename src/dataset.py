@@ -42,6 +42,11 @@ from pathlib import Path
 
 WORD_BUDGET = 200     # words kept per advertisement, measured in measure_tokens.py
 
+# Which 200 words every method reads. v1 used "head", the first 200 words.
+# v2 keeps the opening and then jumps past the employer introduction to the
+# job section, which scored 7.1 points higher with TF-IDF on validation.
+INPUT_STRATEGY = "opening_job_wide"
+
 
 def first_words(text, n_words):
     """Return the first n_words words of the text."""
@@ -138,6 +143,70 @@ def drop_boilerplate(text, pattern=BOILERPLATE):
     return " ".join(kept)
 
 
+# Headings that mark where the description of the job itself starts. Many
+# advertisements, municipal ones especially, open with a presentation of the
+# employer, and in 14% of training advertisements the first of these headings
+# comes after word 200, so the first 200 words never reach the job at all.
+# "vi söker" was left out: it also appears inside employer introductions.
+JOB_MARKERS = ["arbetsuppgifter", "om tjänsten", "om jobbet", "om rollen",
+               "i rollen", "arbetet innebär", "dina uppgifter",
+               "ansvarsområden", "om befattningen"]
+
+# Six more job-description headings, found in the training advertisements that
+# had none of the above. Requirement headings such as "kvalifikationer" and
+# "meriterande" were left out on purpose: they usually come after the job
+# description, so starting there would skip it. Coverage goes from 76% to 81%.
+JOB_MARKERS_WIDE = JOB_MARKERS + ["arbetsbeskrivning", "ditt uppdrag",
+                                  "om uppdraget", "uppdragsbeskrivning",
+                                  "jobbeskrivning", "information om uppdraget"]
+
+# Words kept from the opening when skipping the intro. The first sentence
+# often names the job, for example "Vi söker en undersköterska till ...".
+OPENING_WORDS = 30
+
+
+def skip_intro(text, markers=JOB_MARKERS):
+    """Start the text at the first job-section heading, if there is one.
+
+    Args:
+        text: The full advertisement text.
+        markers: The headings to look for.
+
+    Returns:
+        The text from the earliest heading onwards, or the whole text
+        unchanged if it has none of them.
+    """
+    low = text.lower()
+    starts = [low.find(marker) for marker in markers if marker in low]
+
+    if not starts:
+        return text
+
+    return text[min(starts):]
+
+
+def opening_and_job(text, budget, markers=JOB_MARKERS):
+    """Keep the opening words, then jump to the job section for the rest.
+
+    Args:
+        text: The full advertisement text.
+        budget: How many words to keep in total.
+        markers: The headings to look for.
+
+    Returns:
+        The first OPENING_WORDS words followed by the job section, budget
+        words in all. If the heading is already inside the opening, or there
+        is none, this is the same as the first budget words.
+    """
+    words = text.split()
+    job = skip_intro(text, markers).split()
+
+    if len(words) - len(job) <= OPENING_WORDS:
+        return " ".join(words[:budget])
+
+    return " ".join(words[:OPENING_WORDS] + job[:budget - OPENING_WORDS])
+
+
 def split_words(text, n_words, head_share):
     """Keep n_words, taking head_share of them from the start and the rest from the end.
 
@@ -166,6 +235,10 @@ def truncate_text(text, budget, strategy):
     "head_tail_N" N percent from the start, the rest from the end
     "gated"       drop boilerplate sentences first, then take the first words
     "gated_tail"  drop boilerplate first, then 75 percent head and 25 percent tail
+    "skip_intro"  start at the first job-section heading, then the first words
+    "skip_intro_wide"     the same with JOB_MARKERS_WIDE
+    "opening_job"         the first 30 words, then the job section
+    "opening_job_wide"    the same with JOB_MARKERS_WIDE
     """
     if strategy == "none":
         return text
@@ -183,12 +256,20 @@ def truncate_text(text, budget, strategy):
         return first_words(drop_boilerplate(text, BOILERPLATE_WIDE), budget)
     if strategy == "gated_wide_tail":
         return split_words(drop_boilerplate(text, BOILERPLATE_WIDE), budget, 0.75)
+    if strategy == "skip_intro":
+        return first_words(skip_intro(text), budget)
+    if strategy == "skip_intro_wide":
+        return first_words(skip_intro(text, JOB_MARKERS_WIDE), budget)
+    if strategy == "opening_job":
+        return opening_and_job(text, budget)
+    if strategy == "opening_job_wide":
+        return opening_and_job(text, budget, JOB_MARKERS_WIDE)
 
     raise ValueError(f"Unknown truncation strategy: {strategy}")
 
 
 def load_split(project_dir, period, name, budget=WORD_BUDGET, truncate=True,
-               strategy="head"):
+               strategy=INPUT_STRATEGY):
     """Load one split and return its texts and labels as two matching lists.
 
     name is "train", "val", "test" or "test_nonsv".
@@ -253,7 +334,7 @@ def load_units(project_dir, period, name):
 
 
 def load_fold(project_dir, period, fold_number, budget=WORD_BUDGET,
-              strategy="head"):
+              strategy=INPUT_STRATEGY):
     """Load one cross-validation fold: its test part and its training part.
 
     Returns four lists: test texts, test labels, train texts, train labels.

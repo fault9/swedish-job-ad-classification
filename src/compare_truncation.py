@@ -53,6 +53,10 @@ SETTINGS = [
     ("gated", BUDGET),             # narrow gate: how-to-apply text removed
     ("gated_wide", BUDGET),        # wide gate: conditions, benefits, values too
     ("gated_wide_tail", BUDGET),   # wide gate, then 150 from the start and 50 from the end
+    ("skip_intro", BUDGET),        # start at the job-section heading, skip the employer intro
+    ("skip_intro_wide", BUDGET),   # the same with six more headings
+    ("opening_job", BUDGET),       # first 30 words, then the job section
+    ("opening_job_wide", BUDGET),  # the same with six more headings
     ("head", 250),                 # reference: what more head buys
     ("head", 300),                 # reference, but mBERT only fits 20.8% here
     ("none", 0),                   # ceiling

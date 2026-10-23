@@ -35,7 +35,7 @@ from collections import Counter
 
 from sklearn.metrics import f1_score
 
-from dataset import load_fold
+from dataset import INPUT_STRATEGY, load_fold
 from evaluate import (bootstrap_macro_f1, family_errors, macro_f1,
                       report, save_predictions)
 from inspect_data import save_json
@@ -45,11 +45,12 @@ from train_tfidf import build_model
 PERIOD = "2023_2026"
 N_FOLDS = 5
 
-# Chosen on the frozen validation split by train_tfidf.py, which scored 0.7691.
+# Chosen on the frozen validation split by train_tfidf.py with the v2 input,
+# which scored 0.8392. v1 used C 0.1, chosen the same way on the old input.
 # Fixed here on purpose.
 NGRAM = (1, 1)
 MIN_DF = 2
-C_VALUE = 0.1
+C_VALUE = 0.5
 LOWERCASE = True
 
 
@@ -139,6 +140,7 @@ def main():
     save_json(
         {
             "method": "tfidf_logreg",
+            "input": INPUT_STRATEGY,
             "period": PERIOD,
             "n_folds": N_FOLDS,
             "settings": {"ngram_range": list(NGRAM), "min_df": MIN_DF,

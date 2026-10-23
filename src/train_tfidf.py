@@ -55,11 +55,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
-from dataset import load_split, load_units
+from dataset import INPUT_STRATEGY, load_split, load_units
 from evaluate import report, save_predictions
 from inspect_data import save_json
 
-from paths import PROJECT_DIR
+from paths import PROJECT_DIR, RESULTS_DIR
 
 PERIOD = "2023_2026"
 
@@ -208,12 +208,13 @@ def main():
     # repeated to get them.
     predictions_path = save_predictions(
         load_units(project_dir, PERIOD, "val"), val_labels, predictions,
-        project_dir / "reports" / f"predictions_tfidf_val_{PERIOD}.json",
+        RESULTS_DIR / f"predictions_tfidf_val_{PERIOD}.json",
         method="tfidf_logreg", split="val",
     )
 
     out = {
         "method": "tfidf_logreg",
+        "input": INPUT_STRATEGY,
         "period": PERIOD,
         "seed": SEED,
         "n_trials": len(trials),
@@ -224,7 +225,7 @@ def main():
                         "families", "confusion_matrix", "labels")},
     }
 
-    out_path = project_dir / "reports" / f"tfidf_val_{PERIOD}.json"
+    out_path = RESULTS_DIR / f"tfidf_val_{PERIOD}.json"
     save_json(out, out_path)
 
     print()

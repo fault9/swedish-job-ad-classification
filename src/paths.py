@@ -21,6 +21,7 @@ DOCS_DIR = PROJECT_DIR / "docs"
 
 # Each version is one complete set of experiment results in its own folder,
 # so a new experiment never overwrites an old one. Change this to start a
-# new version. v1 is the first 200 words of each advertisement.
-VERSION = "v1"
+# new version. v1 is the first 200 words of each advertisement. v2 tries
+# starting at the job-section heading instead, skipping the employer intro.
+VERSION = "v2"
 RESULTS_DIR = REPORTS_DIR / VERSION

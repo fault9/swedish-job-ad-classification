@@ -29,7 +29,7 @@ from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
                           DataCollatorWithPadding,
                           get_linear_schedule_with_warmup)
 
-from dataset import load_fold
+from dataset import INPUT_STRATEGY, load_fold
 from evaluate import bootstrap_macro_f1, macro_f1, report, save_predictions
 from inspect_data import save_json
 from paths import PROJECT_DIR, RESULTS_DIR
@@ -228,6 +228,7 @@ def run_method(method, seed, device):
     save_json(
         {
             "method": method,
+            "input": INPUT_STRATEGY,
             "model": model_name,
             "period": PERIOD,
             "n_folds": N_FOLDS,
