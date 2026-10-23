@@ -70,7 +70,12 @@ def to_rows(tokenizer, texts, label_ids=None):
 
 
 def run_fold(fold_number, model_name, seed, tokenizer, device):
-    """Fine-tune on four folds, predict the fifth, return the predictions."""
+    """Fine-tune on four folds and predict the fifth.
+
+    Returns:
+        The fold data, the predicted labels, one row per epoch, and the [CLS]
+        representation of every test ad, which plot_embeddings.py draws.
+    """
     torch.manual_seed(seed)
 
     data = load_fold(fold_number)
@@ -132,16 +137,20 @@ def run_fold(fold_number, model_name, seed, tokenizer, device):
     # Now the test fold: ads the model has never seen. No labels go in.
     model.eval()
     predicted_ids = []
+    embeddings = []
 
     with torch.no_grad():
         for batch in test_loader:
             batch = {key: value.to(device) for key, value in batch.items()}
 
             with torch.autocast(device_type=device, dtype=torch.bfloat16):
-                output = model(**batch)
+                output = model(**batch, output_hidden_states=True)
 
             # The label with the highest score is the model's answer.
             predicted_ids += output.logits.argmax(dim=1).tolist()
+
+            # The last layer's [CLS] vector is what the classifier reads.
+            embeddings.append(output.hidden_states[-1][:, 0].float().cpu())
 
     # Turn 0 to 8 back into "2221" to "5323".
     predictions = [labels[number] for number in predicted_ids]
@@ -150,7 +159,7 @@ def run_fold(fold_number, model_name, seed, tokenizer, device):
     del model, optimizer
     torch.cuda.empty_cache()
 
-    return data, predictions, epoch_rows
+    return data, predictions, epoch_rows, torch.cat(embeddings).numpy()
 
 
 def run_method(method, seed, device):
@@ -173,8 +182,8 @@ def run_method(method, seed, device):
     for fold_number in range(N_FOLDS):
         print(f"  fold {fold_number}")
         started = time.perf_counter()
-        data, predictions, epoch_rows = run_fold(fold_number, model_name, seed,
-                                                 tokenizer, device)
+        data, predictions, epoch_rows, _ = run_fold(fold_number, model_name,
+                                                    seed, tokenizer, device)
         seconds = time.perf_counter() - started
 
         score = macro_f1(data["test_labels"], predictions)
