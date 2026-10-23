@@ -1,54 +1,44 @@
+"""Group near-duplicate advertisements into clusters.
+
+Employers repost the same advertisement with small changes, so removing exact
+copies is not enough. Two texts count as near-duplicates when their sets of
+five-word sequences (shingles) have a Jaccard similarity at or above the
+threshold. Comparing every pair would take billions of comparisons, so each
+text gets a MinHash signature and locality-sensitive hashing (LSH) finds the
+likely pairs. Pairs are then joined into clusters: texts linked by a chain of
+near-duplicates share a cluster.
+
+Several thresholds are run so they can be compared; make_splits.py uses 0.8.
+"""
+
 import time
 from collections import defaultdict
 
 from datasketch import MinHash, MinHashLSH
 
 from files import load_json, save_json
-
 from paths import CANDIDATES_FILE, CLUSTERS_FILE, PERIOD, REPORTS_DIR
 
+SHINGLE_WORDS = 5
+NUM_PERM = 256
 THRESHOLDS = [0.6, 0.7, 0.8, 0.9]
 PRIMARY_THRESHOLD = 0.8
-SIZE_BANDS = [(1, 1), (2, 2), (3, 5), (6, 20), (21, 100), (101, 10 ** 9)]
 
 
-def text_shingles(text, k=5):
-    """Return the set of k-word sequences in one text."""
-
+def build_signature(text):
+    """Return the MinHash signature of the text's five-word sequences."""
     words = text.split()
+    signature = MinHash(num_perm=NUM_PERM)
 
-    return {" ".join(words[i:i + k]) for i in range(len(words) - k + 1)}
-
-
-def build_minhash(text, num_perm=256, k=5):
-    """Return a MinHash signature for one text."""
-
-    signature = MinHash(num_perm=num_perm)
-
-    for shingle in text_shingles(text, k):
-        signature.update(shingle.encode("utf-8"))
+    for i in range(len(words) - SHINGLE_WORDS + 1):
+        signature.update(" ".join(words[i:i + SHINGLE_WORDS]).encode("utf-8"))
 
     return signature
 
 
-def build_all_minhashes(candidates, num_perm=256, k=5, report_every=25000):
-    """Return one MinHash signature per candidate text, in the same order."""
-
-    signatures = []
-
-    for record in candidates:
-        signatures.append(build_minhash(record["text"], num_perm, k))
-
-        if len(signatures) % report_every == 0:
-            print("signatures", len(signatures), "of", len(candidates), flush=True)
-
-    return signatures
-
-
-def find_duplicate_pairs(signatures, threshold=0.8, num_perm=256):
-    """Return the set of position pairs whose estimated Jaccard passes threshold."""
-
-    index = MinHashLSH(threshold=threshold, num_perm=num_perm)
+def find_pairs(signatures, threshold):
+    """Return every pair of positions whose estimated Jaccard passes the threshold."""
+    index = MinHashLSH(threshold=threshold, num_perm=NUM_PERM)
 
     for position, signature in enumerate(signatures):
         index.insert(position, signature)
@@ -64,8 +54,11 @@ def find_duplicate_pairs(signatures, threshold=0.8, num_perm=256):
 
 
 def cluster_positions(pairs, n_texts):
-    """Give every position a cluster id, joining positions linked by pairs."""
+    """Give every text a cluster id; texts linked by a chain of pairs share one.
 
+    Starting from each text without an id, walk to its neighbours, their
+    neighbours and so on, giving them all the same id.
+    """
     neighbours = defaultdict(set)
 
     for first, second in pairs:
@@ -79,28 +72,24 @@ def cluster_positions(pairs, n_texts):
         if cluster_ids[start] is not None:
             continue
 
-        stack = [start]
+        to_visit = [start]
 
-        while stack:
-            position = stack.pop()
+        while to_visit:
+            position = to_visit.pop()
 
             if cluster_ids[position] is not None:
                 continue
 
             cluster_ids[position] = next_id
-
-            for other in neighbours.get(position, ()):
-                if cluster_ids[other] is None:
-                    stack.append(other)
+            to_visit.extend(neighbours[position])
 
         next_id += 1
 
     return cluster_ids
 
 
-def summarise_clusters(cluster_ids, labels):
-    """Count clusters, size bands and label purity for one threshold."""
-
+def summarise(cluster_ids, labels):
+    """Count the clusters, their sizes and how many mix two labels."""
     members = defaultdict(list)
 
     for position, cluster_id in enumerate(cluster_ids):
@@ -108,55 +97,37 @@ def summarise_clusters(cluster_ids, labels):
 
     sizes = [len(positions) for positions in members.values()]
 
-    size_bands = {}
+    mixed = sum(1 for positions in members.values()
+                if len({labels[p] for p in positions}) > 1)
 
-    for low, high in SIZE_BANDS:
-        name = str(low) if low == high else f"{low}-{high}" if high < 10 ** 9 else f"{low}+"
-        size_bands[name] = sum(1 for size in sizes if low <= size <= high)
-
-    mixed_label_clusters = sum(
-        1 for positions in members.values()
-        if len(positions) > 1 and len({labels[p] for p in positions}) > 1
-    )
-
-    label_clusters = defaultdict(set)
+    per_label = defaultdict(set)
 
     for position, cluster_id in enumerate(cluster_ids):
-        label_clusters[labels[position]].add(cluster_id)
+        per_label[labels[position]].add(cluster_id)
 
-    clusters_per_label = {
-        label: len(ids) for label, ids in sorted(label_clusters.items())
-    }
+    per_label = {label: len(ids) for label, ids in sorted(per_label.items())}
 
     return {
         "n_texts": len(cluster_ids),
         "n_clusters": len(members),
-        "singletons": size_bands.get("1", 0),
+        "singletons": sizes.count(1),
         "largest_cluster": max(sizes),
-        "size_bands": size_bands,
-        "mixed_label_clusters": mixed_label_clusters,
-        "clusters_per_label": clusters_per_label,
-        "floor_label": min(clusters_per_label, key=clusters_per_label.get),
-        "floor_clusters": min(clusters_per_label.values()),
+        "mixed_label_clusters": mixed,
+        "clusters_per_label": per_label,
+        "floor_label": min(per_label, key=per_label.get),
+        "floor_clusters": min(per_label.values()),
     }
 
 
 def main():
-    report_path = REPORTS_DIR / f"duplicates_{PERIOD}.json"
-
-    if not CANDIDATES_FILE.exists():
-        raise FileNotFoundError(f"No candidate file at {CANDIDATES_FILE}")
-
     candidates = load_json(CANDIDATES_FILE)
-
     print("Candidate records loaded:", len(candidates), flush=True)
 
     started = time.perf_counter()
-    signatures = build_all_minhashes(candidates)
+    signatures = [build_signature(record["text"]) for record in candidates]
     print(f"Signatures built in {time.perf_counter() - started:.0f} s", flush=True)
 
-    # The texts are no longer needed. Keep only the labels, and release the
-    # candidate list before the sweep, which is the memory-hungry part.
+    # Keep only the labels; the texts are not needed any more and take memory.
     labels = [record["label"] for record in candidates]
     candidates = None
 
@@ -166,48 +137,28 @@ def main():
     for threshold in THRESHOLDS:
         started = time.perf_counter()
 
-        pairs = find_duplicate_pairs(signatures, threshold=threshold)
+        pairs = find_pairs(signatures, threshold)
         cluster_ids = cluster_positions(pairs, len(signatures))
 
-        summary = summarise_clusters(cluster_ids, labels)
+        summary = summarise(cluster_ids, labels)
         summary["n_pairs"] = len(pairs)
         summary["seconds"] = round(time.perf_counter() - started, 1)
 
         cluster_ids_by_threshold[str(threshold)] = cluster_ids
         summaries[str(threshold)] = summary
 
-        print(
-            f"threshold {threshold}: {summary['n_clusters']} clusters, "
-            f"floor {summary['floor_clusters']} ({summary['floor_label']}), "
-            f"largest {summary['largest_cluster']}, "
-            f"mixed-label {summary['mixed_label_clusters']} "
-            f"[{summary['seconds']} s]",
-            flush=True,
-        )
+        print(f"threshold {threshold}: {summary['n_clusters']} clusters, "
+              f"largest {summary['largest_cluster']}, "
+              f"mixed-label {summary['mixed_label_clusters']} "
+              f"[{summary['seconds']} s]", flush=True)
 
-        pairs = None
+    settings = {"period": PERIOD, "primary_threshold": PRIMARY_THRESHOLD,
+                "num_perm": NUM_PERM, "shingle_words": SHINGLE_WORDS}
 
-    save_json(
-        {
-            "period": PERIOD,
-            "primary_threshold": PRIMARY_THRESHOLD,
-            "num_perm": 256,
-            "shingle_words": 5,
-            "cluster_ids": cluster_ids_by_threshold,
-        },
-        CLUSTERS_FILE,
-    )
+    save_json({**settings, "cluster_ids": cluster_ids_by_threshold}, CLUSTERS_FILE)
 
-    save_json(
-        {
-            "period": PERIOD,
-            "primary_threshold": PRIMARY_THRESHOLD,
-            "num_perm": 256,
-            "shingle_words": 5,
-            "thresholds": summaries,
-        },
-        report_path,
-    )
+    report_path = REPORTS_DIR / f"duplicates_{PERIOD}.json"
+    save_json({**settings, "thresholds": summaries}, report_path)
 
     print("Clusters saved:", CLUSTERS_FILE)
     print("Report saved:", report_path)
