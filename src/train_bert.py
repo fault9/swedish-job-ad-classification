@@ -19,7 +19,6 @@ prediction files, and a model can be retrained in a few minutes with the same
 seed.
 """
 
-import json
 import time
 
 import torch
@@ -29,12 +28,12 @@ from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
                           DataCollatorWithPadding,
                           get_linear_schedule_with_warmup)
 
-from dataset import INPUT_STRATEGY, load_fold
+from dataset import load_fold
 from evaluate import bootstrap_macro_f1, macro_f1, report, save_predictions
-from inspect_data import save_json
-from paths import PROJECT_DIR, RESULTS_DIR
+from files import load_json, save_json
+from paths import PERIOD, RESULTS_DIR
+from truncate import INPUT_STRATEGY
 
-PERIOD = "2023_2026"
 N_FOLDS = 5
 
 MODELS = {
@@ -74,7 +73,7 @@ def run_fold(fold_number, model_name, seed, tokenizer, device):
     """Fine-tune on four folds, predict the fifth, return the predictions."""
     torch.manual_seed(seed)
 
-    data = load_fold(PROJECT_DIR, PERIOD, fold_number)
+    data = load_fold(fold_number)
 
     # BERT needs each label as a number from 0 to 8, not as "2511".
     labels = sorted(set(data["train_labels"]))
@@ -280,8 +279,7 @@ def main():
         for seed in SEEDS:
             path = results_path(method, seed)
             if path.exists():
-                with path.open(encoding="utf-8") as file:
-                    saved = json.load(file)
+                saved = load_json(path)
                 interval = saved["pooled_interval"]
                 print(f"  {method:7} seed {seed}   macro F1 "
                       f"{interval['macro_f1']:.4f}   "

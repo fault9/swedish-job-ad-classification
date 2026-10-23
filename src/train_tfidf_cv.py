@@ -29,20 +29,15 @@ NOTHING IS TUNED HERE. If you find yourself editing the settings below after
 seeing a score, stop: that is what the frozen validation split was for.
 """
 
-import json
 import time
-from collections import Counter
 
-from sklearn.metrics import f1_score
-
-from dataset import INPUT_STRATEGY, load_fold
-from evaluate import (bootstrap_macro_f1, family_errors, macro_f1,
-                      report, save_predictions)
-from inspect_data import save_json
-from paths import PROJECT_DIR, RESULTS_DIR
+from dataset import load_fold
+from evaluate import bootstrap_macro_f1, macro_f1, report, save_predictions
+from files import save_json
+from paths import PERIOD, RESULTS_DIR
 from train_tfidf import build_model
+from truncate import INPUT_STRATEGY
 
-PERIOD = "2023_2026"
 N_FOLDS = 5
 
 # Chosen on the frozen validation split by train_tfidf.py with the v2 input,
@@ -56,7 +51,7 @@ LOWERCASE = True
 
 def run_fold(fold_number):
     """Train on four folds, predict the fifth, return predictions and the score."""
-    data = load_fold(PROJECT_DIR, PERIOD, fold_number)
+    data = load_fold(fold_number)
 
     vectorizer, classifier = build_model(NGRAM, MIN_DF, C_VALUE, LOWERCASE)
 

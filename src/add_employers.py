@@ -14,13 +14,8 @@ It takes a few minutes, because it opens all 15,089 downloaded files. It only
 has to be run once per period.
 """
 
-import json
-from collections import Counter
-from pathlib import Path
-
-from inspect_data import save_json
-
-from paths import PROJECT_DIR
+from files import load_json, save_json
+from paths import CANDIDATES_FILE, COLLECTION_DIRS, EMPLOYERS_FILE
 
 
 def employers_by_ad_id(data_dirs):
@@ -41,8 +36,7 @@ def employers_by_ad_id(data_dirs):
 
     for data_dir in data_dirs:
         for file_path in sorted(data_dir.rglob("*.json")):
-            with file_path.open("r", encoding="utf-8") as file:
-                ads = json.load(file)
+            ads = load_json(file_path)
 
             for ad in ads:
                 # "or {}" because the field can be present but null.
@@ -86,35 +80,20 @@ def candidate_employers(candidates, employers):
 
 
 def main():
-    first_year = int(input("Enter the first year: "))
-    last_year = int(input("Enter the last year: "))
-
-    project_dir = PROJECT_DIR
-    period = f"{first_year}_{last_year}"
-
-    data_dirs = [
-        project_dir / "data" / f"collection_{year}"
-        for year in range(first_year, last_year + 1)
-    ]
-
-    candidate_path = project_dir / "data" / f"candidates_{period}.json"
-
-    with candidate_path.open("r", encoding="utf-8") as file:
-        candidates = json.load(file)
+    candidates = load_json(CANDIDATES_FILE)
 
     print("candidates:", len(candidates), flush=True)
 
-    employers = employers_by_ad_id(data_dirs)
+    employers = employers_by_ad_id(COLLECTION_DIRS)
     per_candidate = candidate_employers(candidates, employers)
 
     missing = sum(1 for e in per_candidate if e is None)
     print("candidates with no employer found:", missing)
     print("distinct employers across all candidates:", len(set(per_candidate)))
 
-    out_path = project_dir / "data" / f"employers_{period}.json"
-    save_json(per_candidate, out_path)
+    save_json(per_candidate, EMPLOYERS_FILE)
 
-    print("Employers saved:", out_path)
+    print("Employers saved:", EMPLOYERS_FILE)
 
 
 if __name__ == "__main__":

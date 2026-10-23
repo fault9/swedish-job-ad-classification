@@ -46,14 +46,12 @@ Swedish teaching and care work is almost never advertised in English: label
 Run this once. The output is frozen. Never tune anything against the test sets.
 """
 
-import json
 import random
 from collections import Counter, defaultdict
-from pathlib import Path
 
-from inspect_data import save_json
-
-from paths import PROJECT_DIR
+from files import load_json, save_json
+from paths import (CANDIDATES_FILE, CLUSTERS_FILE, DATA_DIR, EMPLOYERS_FILE,
+                   LANGUAGE_FILE, PERIOD, SPLITS_FILE)
 
 CAP = 20                  # most clusters any one employer may contribute to a label
 MIN_WORDS = 50            # shorter texts are fragments, not advertisements
@@ -61,11 +59,6 @@ LANGUAGE = "SWEDISH"
 PROPORTIONS = {"train": 0.70, "val": 0.15, "test": 0.15}
 IT_LABELS = ["2511", "2512", "2514"]
 SEED = 20260413           # fixed so the same splits come out every time
-
-
-def load_json(path):
-    with path.open("r", encoding="utf-8") as file:
-        return json.load(file)
 
 
 def check_alignment(splits, candidates):
@@ -311,8 +304,7 @@ def pilot_clusters(data_dir, annotations, cluster_ids):
     pilot_ids = set()
 
     for path in pilot_files:
-        with path.open("r", encoding="utf-8") as file:
-            saved = json.load(file)
+        saved = load_json(path)
         for ids in saved["ids_by_group"].values():
             pilot_ids.update(ids)
 
@@ -394,16 +386,10 @@ def report(assignment, name_order):
 
 
 def main():
-    period = input("Enter the period (for example 2023_2026): ").strip()
-
-    project_dir = PROJECT_DIR
-
-    candidate_path = project_dir / "data" / f"candidates_{period}.json"
-    candidates = load_json(candidate_path)
-
-    annotations = load_json(project_dir / "data" / f"language_{period}.json")
-    employers = load_json(project_dir / "data" / f"employers_{period}.json")
-    clusters = load_json(project_dir / "data" / f"clusters_{period}.json")
+    candidates = load_json(CANDIDATES_FILE)
+    annotations = load_json(LANGUAGE_FILE)
+    employers = load_json(EMPLOYERS_FILE)
+    clusters = load_json(CLUSTERS_FILE)
 
     # All four files must describe the same texts in the same order.
     if not len(candidates) == len(annotations) == len(employers):
@@ -441,7 +427,7 @@ def main():
     print("balanced size per label:", f"{target:,}")
     print()
 
-    blocked = pilot_clusters(project_dir / "data", annotations, cluster_ids)
+    blocked = pilot_clusters(DATA_DIR, annotations, cluster_ids)
     print(f"clusters barred from the test sets (label-selection pilot): {len(blocked):,}")
     print()
 
@@ -505,12 +491,12 @@ def main():
     print("  employers shared with train or val (must be 0):", overlap)
 
     splits = {
-        "period": period,
+        "period": PERIOD,
         # Fingerprint of the candidate file these positions refer to.
         # check_alignment() uses it to catch a rebuilt candidate file.
-        "candidate_file": candidate_path.name,
+        "candidate_file": CANDIDATES_FILE.name,
         "candidate_count": len(candidates),
-        "candidate_file_bytes": candidate_path.stat().st_size,
+        "candidate_file_bytes": CANDIDATES_FILE.stat().st_size,
         "clustering_threshold": float(threshold),
         "employer_cap": CAP,
         "min_words": MIN_WORDS,
@@ -531,11 +517,10 @@ def main():
         ],
     }
 
-    out_path = project_dir / "data" / f"splits_{period}.json"
-    save_json(splits, out_path)
+    save_json(splits, SPLITS_FILE)
 
     print()
-    print("Splits saved:", out_path)
+    print("Splits saved:", SPLITS_FILE)
     print("These are frozen. Never tune against test or test_nonsv.")
 
 

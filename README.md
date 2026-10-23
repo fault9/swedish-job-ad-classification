@@ -74,7 +74,6 @@ Stages 3, 5 and a token measurement can be chained:
 | Script | Does |
 |---|---|
 | `src/measure_tokens.py` | How many tokens each BERT needs per Swedish word, and the word budget that fits both. |
-| `src/review_language.py` | Samples advertisements into a sheet for reading by hand. |
 
 ## Setup
 

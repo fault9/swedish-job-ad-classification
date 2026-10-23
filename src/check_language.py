@@ -1,10 +1,9 @@
 from collections import Counter, defaultdict
-import json
-from pathlib import Path
-from inspect_data import save_json
+
 from lingua import LanguageDetectorBuilder
 
-from paths import PROJECT_DIR
+from files import load_json, save_json
+from paths import CANDIDATES_FILE, LANGUAGE_FILE, PERIOD, REPORTS_DIR
 
 def summarize_spans(spans): 
     """Turn one texts detected spans into summary dictionary of language shares."""
@@ -38,7 +37,6 @@ def summarize_spans(spans):
     }
 
 
-
 def annotate_candidates(candidates, detector, batch_size=10000):
     """Detect languages for all candidate texts and return one annotation per text."""
 
@@ -65,9 +63,6 @@ def annotate_candidates(candidates, detector, batch_size=10000):
         print("annotated", len(annotations), "of", len(candidates), flush=True)
 
     return annotations
-
-SHARE_BANDS = ["0.00", "0.00-0.50", "0.50-0.80", "0.80-0.95", "0.95-1.00", "1.00"]
-WORD_BANDS = ["<10", "10-49", "50-99", "100-199", "200-399", "400+"]
 
 
 def share_bucket(share):
@@ -147,24 +142,17 @@ def build_report(annotations):
 
 
 def main():
-    period = input("Enter the period (for example 2023_2025): ").strip()
+    report_path = REPORTS_DIR / f"language_{PERIOD}.json"
 
-    project_dir = PROJECT_DIR
-    candidate_path = project_dir / "data" / f"candidates_{period}.json"
-    annotation_path = project_dir / "data" / f"language_{period}.json"
-    report_path = project_dir / "reports" / f"language_{period}.json"
+    if not CANDIDATES_FILE.exists():
+        raise FileNotFoundError(f"No candidate file at {CANDIDATES_FILE}")
 
-    if not candidate_path.exists():
-        raise FileNotFoundError(f"No candidate file at {candidate_path}")
-
-    if annotation_path.exists():
-        with annotation_path.open("r", encoding="utf-8") as file:
-            annotations = json.load(file)
+    if LANGUAGE_FILE.exists():
+        annotations = load_json(LANGUAGE_FILE)
 
         print("Existing annotations loaded:", len(annotations))
     else:
-        with candidate_path.open("r", encoding="utf-8") as file:
-            candidates = json.load(file)
+        candidates = load_json(CANDIDATES_FILE)
 
         print("Candidate records loaded:", len(candidates))
 
@@ -172,9 +160,9 @@ def main():
 
         annotations = annotate_candidates(candidates, detector)
 
-        save_json(annotations, annotation_path)
+        save_json(annotations, LANGUAGE_FILE)
 
-        print("Annotations saved:", annotation_path)
+        print("Annotations saved:", LANGUAGE_FILE)
 
     report = build_report(annotations)
     save_json(report, report_path)

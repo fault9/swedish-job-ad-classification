@@ -1,10 +1,10 @@
 import json
 import truststore
 from urllib.request import urlopen
-from pathlib import Path
 from datetime import datetime, timedelta
 
-from paths import PROJECT_DIR
+from files import save_json
+from paths import DATA_DIR, FIRST_YEAR, LAST_YEAR
 
 truststore.inject_into_ssl()      # use the macOS keychain for HTTPS
 
@@ -61,15 +61,11 @@ def date_windows(year, window_days=WINDOW_DAYS):
 
     return windows
 
-def window_dir(project_dir, start_date, end_date):
+def window_dir(start_date, end_date):
     """Return the folder for one window, inside its year's collection."""
     name = f"{start_date.date()}_{end_date.date()}"
 
-    return project_dir / "data" / f"collection_{start_date.year}"/name
-
-def save_ads(ads, output_path):
-    with output_path.open("w", encoding="utf-8") as file:
-        json.dump(ads, file, ensure_ascii=False, indent=2)
+    return DATA_DIR / f"collection_{start_date.year}" / name
 
 def download_code(code, concept_id, start_date, end_date, output_dir):
     """Download every page for one occupation group in one window."""
@@ -82,7 +78,7 @@ def download_code(code, concept_id, start_date, end_date, output_dir):
             f"offset cap of {MAX_OFFSET}. Use a smaller window."
         )
 
-    save_ads(first["hits"], output_dir / f"{code}_offset_0.json")
+    save_json(first["hits"], output_dir / f"{code}_offset_0.json")
 
     for offset in range(100, count, 100):
         page = fetch_ads(build_url(concept_id, start_date, end_date, offset))
@@ -96,13 +92,13 @@ def download_code(code, concept_id, start_date, end_date, output_dir):
                 f"expected {expected} ads, got {len(ads)}"
             )
 
-        save_ads(ads, output_dir / f"{code}_offset_{offset}.json")
+        save_json(ads, output_dir / f"{code}_offset_{offset}.json")
 
     return count
 
-def download_window(project_dir, start_date, end_date):
+def download_window(start_date, end_date):
     """Download all occupation groups for one window."""
-    output_dir = window_dir(project_dir, start_date, end_date)
+    output_dir = window_dir(start_date, end_date)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for code, concept_id in OCCUPATIONS.items():
@@ -119,14 +115,9 @@ def download_window(project_dir, start_date, end_date):
 
 
 def main():
-    first_year = int(input("Enter the first year: "))
-    last_year = int(input("Enter the last year: "))
-
-    project_dir = PROJECT_DIR
-
-    for year in range(first_year, last_year + 1):
+    for year in range(FIRST_YEAR, LAST_YEAR + 1):
         for start_date, end_date in date_windows(year):
-            download_window(project_dir, start_date, end_date)
+            download_window(start_date, end_date)
 
 
 if __name__ == "__main__":

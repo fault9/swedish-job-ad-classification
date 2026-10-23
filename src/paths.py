@@ -1,14 +1,6 @@
-"""Where the project's folders are.
+"""Where the project's folders and data files are.
 
-Every script needs to find data/ and reports/, and they all used to work it out
-themselves with Path(__file__).resolve().parent. That broke the moment the
-scripts moved into src/, because then "the folder this file is in" is src/, not
-the project root.
-
-So the answer lives here once. PROJECT_DIR goes up two levels: from this file,
-to src/, to the project root.
-
-    src/paths.py  ->  src/  ->  ssyk-classification/
+PROJECT_DIR is two levels up from this file: src/paths.py -> src/ -> project.
 """
 
 from pathlib import Path
@@ -17,11 +9,21 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 DATA_DIR = PROJECT_DIR / "data"
 REPORTS_DIR = PROJECT_DIR / "reports"
-DOCS_DIR = PROJECT_DIR / "docs"
 
-# Each version is one complete set of experiment results in its own folder,
-# so a new experiment never overwrites an old one. Change this to start a
-# new version. v1 is the first 200 words of each advertisement. v2 tries
-# starting at the job-section heading instead, skipping the employer intro.
+# Each version keeps its results in its own folder. v1 read the first 200
+# words, v2 skips the employer introduction.
 VERSION = "v2"
 RESULTS_DIR = REPORTS_DIR / VERSION
+
+FIRST_YEAR = 2023
+LAST_YEAR = 2026
+PERIOD = f"{FIRST_YEAR}_{LAST_YEAR}"
+
+COLLECTION_DIRS = [DATA_DIR / f"collection_{year}"
+                   for year in range(FIRST_YEAR, LAST_YEAR + 1)]
+CANDIDATES_FILE = DATA_DIR / f"candidates_{PERIOD}.json"
+LANGUAGE_FILE = DATA_DIR / f"language_{PERIOD}.json"
+EMPLOYERS_FILE = DATA_DIR / f"employers_{PERIOD}.json"
+CLUSTERS_FILE = DATA_DIR / f"clusters_{PERIOD}.json"
+SPLITS_FILE = DATA_DIR / f"splits_{PERIOD}.json"
+FOLDS_FILE = DATA_DIR / f"folds_{PERIOD}.json"

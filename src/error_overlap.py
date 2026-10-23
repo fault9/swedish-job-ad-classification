@@ -8,12 +8,10 @@ The script reads the saved prediction files and trains nothing. The BERT
 results use seed 1.
 """
 
-import json
 from collections import Counter
 
-from paths import RESULTS_DIR
-
-PERIOD = "2023_2026"
+from files import load_json
+from paths import PERIOD, RESULTS_DIR
 N_FOLDS = 5
 
 FILES = {
@@ -38,9 +36,8 @@ def load_rows(file_pattern):
     # every ad once.
     for fold in range(N_FOLDS):
         path = RESULTS_DIR / file_pattern.format(fold)
-        with path.open(encoding="utf-8") as file:
-            for row in json.load(file)["predictions"]:
-                rows[row["ad_id"]] = row
+        for row in load_json(path)["predictions"]:
+            rows[row["ad_id"]] = row
 
     return rows
 

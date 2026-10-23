@@ -67,16 +67,15 @@ separate tuning set carved out of an already small corpus — would cost more
 than it buys.
 """
 
-import json
 import random
 from collections import Counter, defaultdict
-from pathlib import Path
 
-from inspect_data import save_json
+from files import load_json, save_json
 from make_splits import (CAP, LANGUAGE, MIN_WORDS, cap_per_employer,
-                         eligible_positions, load_json, one_unit_per_cluster,
+                         eligible_positions, one_unit_per_cluster,
                          pilot_clusters, pure_clusters)
-from paths import DATA_DIR, PROJECT_DIR
+from paths import (CLUSTERS_FILE, DATA_DIR, EMPLOYERS_FILE, FOLDS_FILE,
+                   LANGUAGE_FILE, PERIOD)
 
 N_FOLDS = 5
 SEED = 20261016
@@ -239,11 +238,9 @@ def report(folds):
 
 
 def main():
-    period = input("Enter the period (for example 2023_2026): ").strip()
-
-    annotations = load_json(DATA_DIR / f"language_{period}.json")
-    employers = load_json(DATA_DIR / f"employers_{period}.json")
-    clusters = load_json(DATA_DIR / f"clusters_{period}.json")
+    annotations = load_json(LANGUAGE_FILE)
+    employers = load_json(EMPLOYERS_FILE)
+    clusters = load_json(CLUSTERS_FILE)
 
     threshold = str(clusters["primary_threshold"])
     cluster_ids = clusters["cluster_ids"][threshold]
@@ -282,7 +279,7 @@ def main():
 
     save_json(
         {
-            "period": period,
+            "period": PERIOD,
             "n_folds": N_FOLDS,
             "seed": SEED,
             "employer_cap": CAP,
@@ -304,11 +301,11 @@ def main():
                 for number, fold in folds.items()
             },
         },
-        DATA_DIR / f"folds_{period}.json",
+        FOLDS_FILE,
     )
 
     print()
-    print("Folds saved:", DATA_DIR / f"folds_{period}.json")
+    print("Folds saved:", FOLDS_FILE)
     print("Hyperparameters come from the frozen split search. Do not tune here.")
 
 

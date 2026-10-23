@@ -1,13 +1,11 @@
-import json
 import time
-from pathlib import Path
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from datasketch import MinHash, MinHashLSH
 
-from inspect_data import save_json
+from files import load_json, save_json
 
-from paths import PROJECT_DIR
+from paths import CANDIDATES_FILE, CLUSTERS_FILE, PERIOD, REPORTS_DIR
 
 THRESHOLDS = [0.6, 0.7, 0.8, 0.9]
 PRIMARY_THRESHOLD = 0.8
@@ -144,18 +142,12 @@ def summarise_clusters(cluster_ids, labels):
 
 
 def main():
-    period = input("Enter the period (for example 2023_2025): ").strip()
+    report_path = REPORTS_DIR / f"duplicates_{PERIOD}.json"
 
-    project_dir = PROJECT_DIR
-    candidate_path = project_dir / "data" / f"candidates_{period}.json"
-    cluster_path = project_dir / "data" / f"clusters_{period}.json"
-    report_path = project_dir / "reports" / f"duplicates_{period}.json"
+    if not CANDIDATES_FILE.exists():
+        raise FileNotFoundError(f"No candidate file at {CANDIDATES_FILE}")
 
-    if not candidate_path.exists():
-        raise FileNotFoundError(f"No candidate file at {candidate_path}")
-
-    with candidate_path.open("r", encoding="utf-8") as file:
-        candidates = json.load(file)
+    candidates = load_json(CANDIDATES_FILE)
 
     print("Candidate records loaded:", len(candidates), flush=True)
 
@@ -197,18 +189,18 @@ def main():
 
     save_json(
         {
-            "period": period,
+            "period": PERIOD,
             "primary_threshold": PRIMARY_THRESHOLD,
             "num_perm": 256,
             "shingle_words": 5,
             "cluster_ids": cluster_ids_by_threshold,
         },
-        cluster_path,
+        CLUSTERS_FILE,
     )
 
     save_json(
         {
-            "period": period,
+            "period": PERIOD,
             "primary_threshold": PRIMARY_THRESHOLD,
             "num_perm": 256,
             "shingle_words": 5,
@@ -217,7 +209,7 @@ def main():
         report_path,
     )
 
-    print("Clusters saved:", cluster_path)
+    print("Clusters saved:", CLUSTERS_FILE)
     print("Report saved:", report_path)
 
 

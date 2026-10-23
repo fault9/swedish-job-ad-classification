@@ -47,21 +47,17 @@ still does — candidates_*.json holds the original text — but whether the
 vectorizer folds case before counting is a modelling choice and belongs here.
 """
 
-import json
 import time
-from pathlib import Path
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
-from dataset import INPUT_STRATEGY, load_split, load_units
+from dataset import load_split, load_units
 from evaluate import report, save_predictions
-from inspect_data import save_json
-
-from paths import PROJECT_DIR, RESULTS_DIR
-
-PERIOD = "2023_2026"
+from files import save_json
+from paths import PERIOD, RESULTS_DIR
+from truncate import INPUT_STRATEGY
 
 SEED = 42
 
@@ -145,11 +141,9 @@ def fit_and_score(train_texts, train_labels, val_texts, val_labels,
 
 
 def main():
-    project_dir = PROJECT_DIR
-
     print("loading splits")
-    train_texts, train_labels = load_split(project_dir, PERIOD, "train")
-    val_texts, val_labels = load_split(project_dir, PERIOD, "val")
+    train_texts, train_labels = load_split("train")
+    val_texts, val_labels = load_split("val")
     print(f"  train {len(train_texts):,}   val {len(val_texts):,}")
     print()
 
@@ -207,7 +201,7 @@ def main():
     # off-type-occupation analyses. Without this the runs would have to be
     # repeated to get them.
     predictions_path = save_predictions(
-        load_units(project_dir, PERIOD, "val"), val_labels, predictions,
+        load_units("val"), val_labels, predictions,
         RESULTS_DIR / f"predictions_tfidf_val_{PERIOD}.json",
         method="tfidf_logreg", split="val",
     )

@@ -26,12 +26,13 @@ What gets reported, and why each one is here:
                     that any score has something to be compared against.
 """
 
-import json
 import random
 from collections import Counter, defaultdict
 
 from scipy.stats import chi2
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
+
+from files import save_json
 
 # Which family each occupation belongs to. Used only for error analysis, never
 # as a label the models predict.
@@ -39,18 +40,6 @@ FAMILIES = {
     "2511": "IT", "2512": "IT", "2514": "IT",
     "2341": "Education", "2330": "Education", "5312": "Education",
     "2221": "Healthcare", "5321": "Healthcare", "5323": "Healthcare",
-}
-
-NAMES = {
-    "2511": "Systemanalytiker/IT-arkitekter",
-    "2512": "Mjukvaru-/systemutvecklare",
-    "2514": "Systemtestare/testledare",
-    "2341": "Grundskollärare",
-    "2330": "Gymnasielärare",
-    "5312": "Elevassistenter",
-    "2221": "Grundutbildade sjuksköterskor",
-    "5321": "Undersköterskor, hemtjänst",
-    "5323": "Undersköterskor, vårdavdelning",
 }
 
 
@@ -325,11 +314,8 @@ def save_predictions(units, true_labels, predicted_labels, path, method, split):
         for unit, true_label, predicted in zip(units, true_labels, predicted_labels)
     ]
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    with path.open("w", encoding="utf-8") as file:
-        json.dump({"method": method, "split": split, "n": len(rows),
-                   "predictions": rows}, file, ensure_ascii=False, indent=2)
+    save_json({"method": method, "split": split, "n": len(rows),
+               "predictions": rows}, path)
 
     return path
 

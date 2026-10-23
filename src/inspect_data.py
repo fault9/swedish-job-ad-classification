@@ -1,33 +1,16 @@
-import json
-from pathlib import Path
 from datetime import datetime
 from collections import Counter
 
-from paths import PROJECT_DIR
+from files import load_json, save_json
+from paths import (CANDIDATES_FILE, COLLECTION_DIRS, FIRST_YEAR, LAST_YEAR,
+                   PERIOD, REPORTS_DIR)
 
-def load_ads(file_path):
-    with file_path.open("r", encoding="utf-8") as file:
-        ads = json.load(file)
-
-    return ads
 
 def clean_text(text):
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
     return text.strip()
 
-def save_json(data, file_path):
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with file_path.open("w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=2)
-
-def period_name(first_year, last_year):
-    """Return the text used in output filenames."""
-    if first_year == last_year:
-        return str(first_year)
-
-    return f"{first_year}_{last_year}"
 
 def prepare_candidates(data_dirs, start_date, end_date):
     seen_ids = set()
@@ -57,7 +40,7 @@ def prepare_candidates(data_dirs, start_date, end_date):
     duplicate_text_count = 0
 
     for file_path in files:
-        ads = load_ads(file_path)
+        ads = load_json(file_path)
         total_ads += len(ads)
 
         for ad in ads:
@@ -145,36 +128,25 @@ def prepare_candidates(data_dirs, start_date, end_date):
     }
     return candidate_ads, summary
 
+
 def main():
-    first_year = int(input("Enter the first year: "))
-    last_year = int(input("Enter the last year: "))
-
-    project_dir = PROJECT_DIR
-    period = period_name(first_year, last_year)
-
-    data_dirs = [
-        project_dir / "data" / f"collection_{year}"
-        for year in range(first_year, last_year + 1)
-    ]
-
-    start_date = datetime(first_year, 1, 1)
-    end_date = datetime(last_year + 1, 1, 1)
+    start_date = datetime(FIRST_YEAR, 1, 1)
+    end_date = datetime(LAST_YEAR + 1, 1, 1)
 
     candidate_ads, summary = prepare_candidates(
-        data_dirs,
+        COLLECTION_DIRS,
         start_date,
         end_date,
     )
 
-    report_path = project_dir / "reports" / f"inspection_{period}.json"
-    candidate_path = project_dir / "data" / f"candidates_{period}.json"
+    report_path = REPORTS_DIR / f"inspection_{PERIOD}.json"
 
     save_json(summary, report_path)
-    save_json(candidate_ads, candidate_path)
+    save_json(candidate_ads, CANDIDATES_FILE)
 
     print("Report saved:", report_path)
     print("Candidate records saved:", len(candidate_ads))
-    print("Dataset saved:", candidate_path)
+    print("Dataset saved:", CANDIDATES_FILE)
 
 
 if __name__ == "__main__":
