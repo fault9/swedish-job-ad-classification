@@ -1,29 +1,9 @@
 """Score predictions the same way for every method.
 
-All three methods go through these functions, so the numbers are comparable by
-construction rather than by me remembering to compute them the same way.
-
-What gets reported, and why each one is here:
-
-  macro F1          The headline. Macro means every label counts equally, which
-                    matters because the nine classes are equal in size here but
-                    the real world is not, and because a method could otherwise
-                    look good by being right on the easy labels only.
-
-  per-class F1      Shows which occupations a method struggles with. Expect the
-                    IT labels to be hardest.
-
-  confusion matrix  Shows WHAT a method confuses, not just how often.
-
-  within-family vs  The point of the 3x3 design. Confusing 2511 with 2512 is a
-  across-family     fine distinction between two software roles. Confusing 2511
-                    with 5321 is an undersköterska mistaken for an IT architect.
-                    Both count as one error in accuracy, but they are not the
-                    same kind of failure, and a good method should make mostly
-                    the first kind.
-
-  majority baseline With nine equal classes this is 1/9 = 11.1%. It is here so
-                    that any score has something to be compared against.
+All methods go through these functions, so their scores are comparable. The
+headline metric is macro F1. Confidence intervals and paired comparisons
+resample employers, because advertisements from one employer share a template
+and their errors are not independent.
 """
 
 import random
@@ -34,8 +14,7 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
 from files import save_json
 
-# Which family each occupation belongs to. Used only for error analysis, never
-# as a label the models predict.
+# Used only for error analysis, never as a label or a feature.
 FAMILIES = {
     "2511": "IT", "2512": "IT", "2514": "IT",
     "2341": "Education", "2330": "Education", "5312": "Education",
@@ -44,12 +23,14 @@ FAMILIES = {
 
 
 def family_errors(true_labels, predicted_labels):
-    """Split the mistakes into fine confusions and gross ones.
+    """Split the errors into within-family and across-family errors.
 
-    A within-family error means the method picked the wrong occupation but the
-    right broad area. An across-family error means it was not even close.
+    Args:
+        true_labels: The true label of each advertisement.
+        predicted_labels: The predicted label of each advertisement.
 
-    Returns the counts and the two rates as shares of all predictions.
+    Returns:
+        A dict with the counts and the two error rates.
     """
     total = len(true_labels)
     within = 0
@@ -74,10 +55,13 @@ def family_errors(true_labels, predicted_labels):
 
 
 def majority_baseline(true_labels):
-    """Accuracy you get by always guessing the most common label.
+    """Return the accuracy of always guessing the most common label.
 
-    With nine equal classes this is about 11.1%. Any method that cannot beat it
-    has learned nothing.
+    Args:
+        true_labels: The true label of each advertisement.
+
+    Returns:
+        The share of advertisements with the most common label.
     """
     most_common = Counter(true_labels).most_common(1)[0][1]
 
@@ -85,12 +69,16 @@ def majority_baseline(true_labels):
 
 
 def macro_f1(true_labels, predicted_labels):
-    """Macro F1 for one set of predictions.
+    """Return macro F1, with every label weighted equally.
 
-    "Macro" means each of the nine labels counts the same, no matter how many
-    advertisements it has. The label list is taken from the true labels and
-    passed in explicitly, so a label that never gets predicted still counts as
-    a zero instead of quietly disappearing.
+    A label that is never predicted counts as zero.
+
+    Args:
+        true_labels: The true label of each advertisement.
+        predicted_labels: The predicted label of each advertisement.
+
+    Returns:
+        The macro F1 score.
     """
     labels = sorted(set(true_labels))
 
@@ -99,32 +87,34 @@ def macro_f1(true_labels, predicted_labels):
 
 
 def group_by_employer(units):
-    """Return {employer: [positions]}, one entry per employer.
+    """Group advertisement positions by employer.
 
-    Same shape as nest_counts and group_positions_by_band: walk the list once
-    and collect positions under a key. The positions are indexes into the
-    true-label and prediction lists, so once we have picked some employers we
-    know exactly which predictions belong to them.
+    Args:
+        units: One dict per advertisement, each with an "employer" key.
+
+    Returns:
+        A dict mapping each employer to the positions of its advertisements.
     """
     groups = defaultdict(list)
 
     for position, unit in enumerate(units):
         groups[unit["employer"]].append(position)
 
-    # Plain dict on the way out: a defaultdict would silently invent an
-    # employer if anything later looked one up that is not there.
     return dict(groups)
 
 
 def draw_employers(groups, generator):
-    """Pick employers at random, with replacement, and return their positions.
+    """Draw employers with replacement and return their positions.
 
-    "With replacement" means the same employer can be picked more than once,
-    and some are not picked at all. That is what makes it a bootstrap: each
-    draw is a slightly different version of the same test set.
+    As many employers are drawn as there are in total, so each draw is about
+    the size of the real test set.
 
-    We pick as many employers as there are in total, so each draw is about the
-    same size as the real test set.
+    Args:
+        groups: Positions per employer, from group_by_employer.
+        generator: A random.Random instance.
+
+    Returns:
+        The positions of all advertisements from the drawn employers.
     """
     names = sorted(groups)
     positions = []
@@ -138,29 +128,17 @@ def draw_employers(groups, generator):
 
 def bootstrap_macro_f1(units, true_labels, predicted_labels,
                        n_rounds=2000, seed=11):
-    """Macro F1 with a 95% confidence interval, by resampling employers.
+    """Return macro F1 with a 95% confidence interval from resampling employers.
 
-    What a confidence interval is for. A single score like 0.769 looks exact,
-    but it came from one particular test set. If we had drawn a different test
-    set we would have got a slightly different number. The interval says how
-    much that number could reasonably move, so you know whether a gap between
-    two methods is real or just noise.
+    Args:
+        units: One dict per advertisement, each with an "employer" key.
+        true_labels: The true label of each advertisement.
+        predicted_labels: The predicted label of each advertisement.
+        n_rounds: How many resamples to draw.
+        seed: Seed for the random generator.
 
-    Why we resample EMPLOYERS and not advertisements. The test set has 2,277
-    advertisements but only 432 employers, and label 5321 has just 22. Several
-    advertisements from the same employer are written by the same person in the
-    same style, so they are not 2,277 independent facts. Resampling
-    advertisements would pretend they were, and the interval would come out far
-    too narrow.
-
-    How it works, step by step:
-
-      1. Group the test advertisements by employer.
-      2. Pick 432 employers at random, with replacement.
-      3. Score the advertisements those employers brought.
-      4. Do that 2,000 times, which gives 2,000 slightly different scores.
-      5. Sort them and cut off the lowest 2.5% and the highest 2.5%. What is
-         left is the middle 95%, and that is the interval.
+    Returns:
+        A dict with the macro F1, the interval and the sample sizes.
     """
     groups = group_by_employer(units)
     generator = random.Random(seed)
@@ -173,8 +151,8 @@ def bootstrap_macro_f1(units, true_labels, predicted_labels,
         drawn_predicted = [predicted_labels[p] for p in positions]
         scores.append(macro_f1(drawn_true, drawn_predicted))
 
+    # The middle 95% of the scores is the interval.
     scores.sort()
-    # Cut 2.5% off each end. What remains is the middle 95%.
     low = scores[int(0.025 * n_rounds)]
     high = scores[int(0.975 * n_rounds)]
 
@@ -190,10 +168,15 @@ def bootstrap_macro_f1(units, true_labels, predicted_labels,
 
 
 def count_disagreements(true_labels, predictions_a, predictions_b):
-    """Count the advertisements where exactly one of the two methods is right.
+    """Count the advertisements where exactly one of two methods is right.
 
-    Returns (only_a, only_b). Cases where both are right, or both wrong, are
-    ignored on purpose: they say nothing about which method is better.
+    Args:
+        true_labels: The true label of each advertisement.
+        predictions_a: The predictions of method A.
+        predictions_b: The predictions of method B.
+
+    Returns:
+        Two counts: only A right, and only B right.
     """
     only_a = 0
     only_b = 0
@@ -208,48 +191,46 @@ def count_disagreements(true_labels, predictions_a, predictions_b):
 
 
 def mcnemar_p_value(only_a, only_b):
-    """Probability of seeing this lopsided a result if the methods were equal.
+    """Return the McNemar p-value, with continuity correction.
 
-    This is McNemar's test. The idea is simple: if two methods were equally
-    good, then among the advertisements where exactly one of them is right, it
-    should be method A about half the time. If A wins 80 and B wins 40, that is
-    lopsided, and the test says how surprising that is.
+    Args:
+        only_a: Advertisements only method A got right.
+        only_b: Advertisements only method B got right.
 
-    A small p-value means the difference is unlikely to be chance. It says
-    nothing about how BIG the difference is, which is why the bootstrap
-    interval is reported next to it.
-
-    Returns "not a number" when there are too few disagreements to test.
+    Returns:
+        The p-value, or nan if there are fewer than 10 disagreements.
     """
     total = only_a + only_b
 
     if total < 10:
         return float("nan")
 
-    # The -1 is a continuity correction, standard for this test.
     statistic = (abs(only_a - only_b) - 1) ** 2 / total
 
-    # sf is the survival function: the chance of a value this large or larger.
-    # One degree of freedom, because there is one comparison.
     return chi2.sf(statistic, 1)
 
 
 def compare_methods(units, true_labels, predictions_a, predictions_b,
                     name_a="A", name_b="B", n_rounds=2000, seed=12):
-    """Is method A actually better than method B, or is the gap just noise?
+    """Compare two methods on the same advertisements.
 
-    Reports three things:
+    The difference in macro F1 gets a 95% interval from resampling employers.
+    Both methods are scored on the same resample each round. The difference is
+    established only if the interval does not include zero.
 
-      only_a / only_b   how many advertisements each method alone got right
-      mcnemar_p         how surprising that split would be if they were equal
-      difference + CI   how big the macro F1 gap is, and how much it could move
+    Args:
+        units: One dict per advertisement, each with an "employer" key.
+        true_labels: The true label of each advertisement.
+        predictions_a: The predictions of method A.
+        predictions_b: The predictions of method B.
+        name_a: Name of method A.
+        name_b: Name of method B.
+        n_rounds: How many resamples to draw.
+        seed: Seed for the random generator.
 
-    The field to look at is "established". It is True only when the confidence
-    interval stays entirely on one side of zero. If the interval includes zero,
-    the honest statement is "A scored higher" and NOT "A is better".
-
-    The interval is built the same way as in bootstrap_macro_f1: by drawing
-    employers with replacement, because employers are the real unit here.
+    Returns:
+        A dict with the disagreement counts, the McNemar p-value, the
+        difference in macro F1 (A minus B) and its interval.
     """
     only_a, only_b = count_disagreements(true_labels, predictions_a, predictions_b)
 
@@ -281,26 +262,25 @@ def compare_methods(units, true_labels, predictions_a, predictions_b,
         "macro_f1_difference": observed,
         "ci_low": low,
         "ci_high": high,
-        # True only when the interval does not cross zero.
         "established": low > 0 or high < 0,
     }
 
 
 def save_predictions(units, true_labels, predicted_labels, path, method, split):
-    """Write one row per advertisement: what it was, what the method said.
+    """Save one row per advertisement with its true and predicted label.
 
-    Every method must write this file. Two analyses depend on it and neither is
-    possible from aggregate scores alone:
+    The error overlap and the paired comparisons are computed from these files.
 
-      - whether the three methods fail on the SAME advertisements, which is how
-        we tell a shared limit in the data from genuine differences between
-        methods
-      - whether the errors sit in the off-type occupations inside a label, for
-        example the 15.3% of label 2512 that is Projektledare, IT rather than a
-        developer
+    Args:
+        units: One dict per advertisement, from the split or fold.
+        true_labels: The true label of each advertisement.
+        predicted_labels: The predicted label of each advertisement.
+        path: Where to save the file.
+        method: Name of the method, for example "kbbert".
+        split: Name of the split, for example "fold0".
 
-    The ad_id makes each row joinable back to the raw advertisement, so the
-    occupation title can be looked up later without re-running anything.
+    Returns:
+        The path the file was saved to.
     """
     rows = [
         {
@@ -321,11 +301,20 @@ def save_predictions(units, true_labels, predicted_labels, path, method, split):
 
 
 def report(true_labels, predicted_labels, title="results"):
-    """Print the full scorecard and return the numbers as a dictionary."""
+    """Print the scores and return them as a dict.
+
+    Args:
+        true_labels: The true label of each advertisement.
+        predicted_labels: The predicted label of each advertisement.
+        title: Heading for the printout.
+
+    Returns:
+        A dict with accuracy, macro F1, family errors, per-class scores and
+        the confusion matrix.
+    """
     labels = sorted(set(true_labels))
 
-    macro = f1_score(true_labels, predicted_labels, labels=labels, average="macro",
-                     zero_division=0)
+    macro = macro_f1(true_labels, predicted_labels)
     accuracy = sum(t == p for t, p in zip(true_labels, predicted_labels)) / len(true_labels)
     families = family_errors(true_labels, predicted_labels)
 
@@ -336,9 +325,9 @@ def report(true_labels, predicted_labels, title="results"):
     print(f"  majority baseline  {majority_baseline(true_labels):.3f}")
     print()
     print(f"  within-family errors   {families['within_family_errors']:>5,}"
-          f"  ({families['within_family_rate']:.1%})   fine confusions")
+          f"  ({families['within_family_rate']:.1%})")
     print(f"  across-family errors   {families['across_family_errors']:>5,}"
-          f"  ({families['across_family_rate']:.1%})   gross confusions")
+          f"  ({families['across_family_rate']:.1%})")
     print()
 
     print(classification_report(true_labels, predicted_labels, labels=labels,

@@ -141,6 +141,7 @@ def fit_and_score(train_texts, train_labels, val_texts, val_labels,
 
 
 def main():
+    """Search the TF-IDF settings on the validation split and save the best."""
     print("loading splits")
     train_texts, train_labels = load_split("train")
     val_texts, val_labels = load_split("val")

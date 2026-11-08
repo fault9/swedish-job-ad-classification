@@ -101,6 +101,7 @@ def align(points, families):
 
 
 def main():
+    """Plot the test advertisements of one fold in 2D for each method."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     data = load_fold(FOLD)
     families = [FAMILY_NAMES[FAMILIES[label]] for label in data["test_labels"]]

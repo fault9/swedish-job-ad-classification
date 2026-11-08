@@ -80,6 +80,7 @@ def candidate_employers(candidates, employers):
 
 
 def main():
+    """Find the employer of every candidate and save the list."""
     candidates = load_json(CANDIDATES_FILE)
 
     print("candidates:", len(candidates), flush=True)

@@ -1,3 +1,9 @@
+"""Detect the language of every candidate text with Lingua.
+
+Each text is split into spans of one language, and the language with the most
+words is the dominant language. The annotations are used by the later filters.
+"""
+
 from collections import Counter, defaultdict
 
 from lingua import LanguageDetectorBuilder
@@ -142,6 +148,7 @@ def build_report(annotations):
 
 
 def main():
+    """Annotate the language of every candidate, or load the saved annotations, and save a report."""
     report_path = REPORTS_DIR / f"language_{PERIOD}.json"
 
     if not CANDIDATES_FILE.exists():

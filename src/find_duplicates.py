@@ -120,6 +120,7 @@ def summarise(cluster_ids, labels):
 
 
 def main():
+    """Cluster near-duplicates at every threshold and save the clusters."""
     candidates = load_json(CANDIDATES_FILE)
     print("Candidate records loaded:", len(candidates), flush=True)
 

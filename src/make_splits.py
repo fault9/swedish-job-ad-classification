@@ -386,6 +386,7 @@ def report(assignment, name_order):
 
 
 def main():
+    """Build the frozen train, validation and test splits and save them."""
     candidates = load_json(CANDIDATES_FILE)
     annotations = load_json(LANGUAGE_FILE)
     employers = load_json(EMPLOYERS_FILE)

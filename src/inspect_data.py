@@ -1,3 +1,10 @@
+"""Turn the downloaded records into candidate texts.
+
+Records outside the period, repeated advertisement identifiers and empty texts
+are dropped. Identical texts are merged into one candidate, and texts found
+under more than one label are removed.
+"""
+
 from datetime import datetime
 from collections import Counter
 
@@ -7,12 +14,14 @@ from paths import (CANDIDATES_FILE, COLLECTION_DIRS, FIRST_YEAR, LAST_YEAR,
 
 
 def clean_text(text):
+    """Use the same line breaks everywhere and strip the text."""
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
     return text.strip()
 
 
 def prepare_candidates(data_dirs, start_date, end_date):
+    """Build the candidate texts from the downloads and return them with a summary."""
     seen_ids = set()
     duplicate_id_count = 0
     empty_text_count = 0
@@ -130,6 +139,7 @@ def prepare_candidates(data_dirs, start_date, end_date):
 
 
 def main():
+    """Build the candidate texts and save them with a report."""
     start_date = datetime(FIRST_YEAR, 1, 1)
     end_date = datetime(LAST_YEAR + 1, 1, 1)
 

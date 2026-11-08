@@ -66,6 +66,7 @@ def run_fold(fold_number):
 
 
 def main():
+    """Run TF-IDF on all five folds and save the pooled scores."""
     print(f"TF-IDF across {N_FOLDS} folds")
     print(f"  settings from the frozen split: ngram {NGRAM}, min_df {MIN_DF}, "
           f"C {C_VALUE}, lowercase {LOWERCASE}")

@@ -267,10 +267,12 @@ def run_method(method, seed, device):
 
 
 def results_path(method, seed):
+    """Return the path of the results file for one method and seed."""
     return RESULTS_DIR / f"{method}_seed{seed}_cv_{PERIOD}.json"
 
 
 def main():
+    """Run every method and seed that is not done yet, then print all scores."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     for method in METHODS:

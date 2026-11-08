@@ -46,6 +46,7 @@ def confusion_shares(file_pattern):
 
 
 def main():
+    """Plot the confusion matrices of the three methods side by side."""
     shares = {name: confusion_shares(pattern) for name, pattern in FILES.items()}
 
     # The same colour scale in every panel, set by the largest error anywhere.

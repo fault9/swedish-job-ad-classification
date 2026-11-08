@@ -28,6 +28,7 @@ def count_tokens(tokenizer, text):
 
 
 def main():
+    """Print tokens per word for each model, and how many advertisements fit."""
     hf_logging.set_verbosity_error()
 
     texts, _ = load_split("train", truncate=False)

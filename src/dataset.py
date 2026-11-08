@@ -73,6 +73,7 @@ def load_fold(fold_number, budget=WORD_BUDGET, strategy=INPUT_STRATEGY):
         )
 
     def to_texts(units):
+        """Return the truncated text of each unit, after checking it is the right advertisement."""
         texts = []
         for unit in units:
             # Check that the position still points at the same ad.

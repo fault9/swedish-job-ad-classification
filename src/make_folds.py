@@ -238,6 +238,7 @@ def report(folds):
 
 
 def main():
+    """Build the five balanced folds and save them."""
     annotations = load_json(LANGUAGE_FILE)
     employers = load_json(EMPLOYERS_FILE)
     clusters = load_json(CLUSTERS_FILE)

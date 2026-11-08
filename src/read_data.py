@@ -1,3 +1,9 @@
+"""Download the advertisements from the JobTech historical API.
+
+The API will not page past an offset of 2,000, so one query is run per day and
+per occupational group. The raw records are saved as JSON files under data/.
+"""
+
 import json
 import truststore
 from urllib.request import urlopen
@@ -29,6 +35,7 @@ OCCUPATIONS = {
 }
 
 def fetch_ads(url):
+    """Fetch one page of advertisements from the API."""
     with urlopen(url, timeout=30) as response:
         data = json.load(response)
     
@@ -36,6 +43,7 @@ def fetch_ads(url):
 
 
 def build_url(concept_id, start_date, end_date, offset=0):
+    """Build the search URL for one label, date window and page offset."""
     url = (
         "https://historical.api.jobtechdev.se/search"
         f"?occupation-group={concept_id}"
@@ -115,6 +123,7 @@ def download_window(start_date, end_date):
 
 
 def main():
+    """Download every day of every year in the period."""
     for year in range(FIRST_YEAR, LAST_YEAR + 1):
         for start_date, end_date in date_windows(year):
             download_window(start_date, end_date)
