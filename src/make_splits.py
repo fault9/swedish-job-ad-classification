@@ -37,13 +37,7 @@ Seven rules are applied, and each one removes a way the results could be wrong:
 7. Every label gets the same number of texts. Class imbalance would otherwise
    be mixed into any difference we measure between methods.
 
-It also writes a second, smaller test set of advertisements where Swedish is
-NOT the dominant language, for the three IT labels only. That set is for
-inference only, never training. The other six labels are left out because
-Swedish teaching and care work is almost never advertised in English: label
-5323 has eight such advertisements in total.
-
-Run this once. The output is frozen. Never tune anything against the test sets.
+Run this once. The output is frozen. Never tune anything against the test set.
 """
 
 import random
@@ -57,7 +51,6 @@ CAP = 20                  # most clusters any one employer may contribute to a l
 MIN_WORDS = 50            # shorter texts are fragments, not advertisements
 LANGUAGE = "SWEDISH"
 PROPORTIONS = {"train": 0.70, "val": 0.15, "test": 0.15}
-IT_LABELS = ["2511", "2512", "2514"]
 SEED = 20260413           # fixed so the same splits come out every time
 
 
@@ -83,9 +76,7 @@ def check_alignment(splits, candidates):
             f"has been rebuilt, so the saved positions are no longer valid."
         )
 
-    groups = list(splits["splits"].values()) + [splits["test_nonsv"]]
-
-    for units in groups:
+    for units in splits["splits"].values():
         for unit in units:
             recorded = unit["ad_id"]
             actual = candidates[unit["position"]]["source_ad_ids"][0]
@@ -106,8 +97,8 @@ def eligible_positions(annotations, swedish):
     position 57 means the same advertisement in all three files.
 
     Set swedish=True to get the texts where Swedish is the dominant language,
-    which become train, validation and test. Set swedish=False to get the rest,
-    which become the second test set. The two groups never overlap.
+    which become train, validation and test. Set swedish=False to get the rest.
+    The two groups never overlap.
     """
 
     wanted = []
@@ -436,61 +427,6 @@ def main():
     assignment = trim_to_equal(assignment, ["train", "val", "test"])
     report(assignment, ["train", "val", "test"])
 
-    # Step 2: the second test set, where Swedish is NOT the dominant language.
-    # IT labels only, and used for inference only. It answers one question:
-    # does each method hold up when the advertisement is mostly English?
-    other = eligible_positions(annotations, swedish=False)
-    keep_other = pure_clusters(other, annotations, cluster_ids)
-    other_units = one_unit_per_cluster(other, annotations, cluster_ids,
-                                       employers, keep_other)
-    other_units = [u for u in other_units if u["label"] in IT_LABELS]
-    other_units = cap_per_employer(other_units, CAP, generator)
-
-    # An international company often posts in both Swedish and English. Drop any
-    # employer the model has already seen for this label, or the language slice
-    # would measure employer recognition instead of language.
-    used = {(u["label"], u["employer"])
-            for name in ("train", "val") for u in assignment[name]}
-
-    before = len(other_units)
-    other_units = [u for u in other_units
-                   if (u["label"], u["employer"]) not in used]
-    print()
-    print(f"non-Swedish units: {before:,} -> {len(other_units):,} "
-          f"after removing employers seen in train or val")
-
-    # Same rule as the Swedish test set: no pilot advertisements.
-    before = len(other_units)
-    other_units = [u for u in other_units if u["cluster"] not in blocked]
-    print(f"                   {before:,} -> {len(other_units):,} "
-          f"after removing label-selection pilot clusters")
-
-    # Match the Swedish test size so the two are equally precise.
-    test_size = int(target * PROPORTIONS["test"])
-    by_label = defaultdict(list)
-
-    for unit in other_units:
-        by_label[unit["label"]].append(unit)
-
-    test_nonsv = []
-
-    for label in IT_LABELS:
-        available = by_label[label]
-        count = min(test_size, len(available))
-        test_nonsv += generator.sample(available, count)
-
-        if count < test_size:
-            print(f"  warning: {label} has only {count} non-Swedish clusters, "
-                  f"wanted {test_size}")
-
-    print()
-    print("non-Swedish IT test set:", f"{len(test_nonsv):,}")
-    print("  " + "  ".join(
-        f"{l}:{sum(1 for u in test_nonsv if u['label'] == l):,}" for l in IT_LABELS))
-
-    overlap = sum(1 for u in test_nonsv if (u["label"], u["employer"]) in used)
-    print("  employers shared with train or val (must be 0):", overlap)
-
     splits = {
         "period": PERIOD,
         # Fingerprint of the candidate file these positions refer to.
@@ -512,17 +448,13 @@ def main():
             ]
             for name in assignment
         },
-        "test_nonsv": [
-            {k: u[k] for k in ("position", "ad_id", "cluster", "label", "employer")}
-            for u in test_nonsv
-        ],
     }
 
     save_json(splits, SPLITS_FILE)
 
     print()
     print("Splits saved:", SPLITS_FILE)
-    print("These are frozen. Never tune against test or test_nonsv.")
+    print("These are frozen. Never tune against the test set.")
 
 
 if __name__ == "__main__":

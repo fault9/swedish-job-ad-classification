@@ -14,7 +14,7 @@ def load_split(name, budget=WORD_BUDGET, truncate=True,
     """Load the texts and labels of one split.
 
     Args:
-        name: "train", "val", "test" or "test_nonsv".
+        name: "train", "val" or "test".
         budget: How many words to keep per text.
         truncate: False returns the whole texts.
         strategy: Which words to keep, see truncate.py.
@@ -28,7 +28,7 @@ def load_split(name, budget=WORD_BUDGET, truncate=True,
     # Stop if the candidate file has changed since the splits were frozen.
     check_alignment(splits, candidates)
 
-    units = splits["test_nonsv"] if name == "test_nonsv" else splits["splits"][name]
+    units = splits["splits"][name]
 
     texts, labels = [], []
 
@@ -44,9 +44,6 @@ def load_split(name, budget=WORD_BUDGET, truncate=True,
 def load_units(name):
     """Return the ad_id, cluster, employer, label and position of each ad in a split."""
     splits = load_json(SPLITS_FILE)
-
-    if name == "test_nonsv":
-        return splits["test_nonsv"]
 
     return splits["splits"][name]
 
