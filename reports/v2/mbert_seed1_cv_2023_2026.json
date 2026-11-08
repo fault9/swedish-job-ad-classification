@@ -1,0 +1,280 @@
+{
+  "method": "mbert",
+  "input": "opening_job_wide",
+  "model": "google-bert/bert-base-multilingual-cased",
+  "period": "2023_2026",
+  "n_folds": 5,
+  "settings": {
+    "learning_rate": 2e-05,
+    "batch_size": 16,
+    "epochs": 3,
+    "warmup_share": 0.1,
+    "seed": 1,
+    "max_tokens": 512,
+    "chosen_on": "Devlin et al. (2019), not tuned"
+  },
+  "versions": {
+    "torch": "2.14.1+cu132",
+    "transformers": "5.19.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "n_train": 11520,
+      "n_test": 2880,
+      "epochs": [
+        {
+          "epoch": 1,
+          "loss": 0.8675,
+          "seconds": 114.2
+        },
+        {
+          "epoch": 2,
+          "loss": 0.3336,
+          "seconds": 118.3
+        },
+        {
+          "epoch": 3,
+          "loss": 0.2332,
+          "seconds": 113.8
+        }
+      ],
+      "macro_f1": 0.8737104129272731,
+      "seconds": 370.7
+    },
+    {
+      "fold": 1,
+      "n_train": 11520,
+      "n_test": 2880,
+      "epochs": [
+        {
+          "epoch": 1,
+          "loss": 0.8795,
+          "seconds": 113.0
+        },
+        {
+          "epoch": 2,
+          "loss": 0.3198,
+          "seconds": 113.4
+        },
+        {
+          "epoch": 3,
+          "loss": 0.2178,
+          "seconds": 113.5
+        }
+      ],
+      "macro_f1": 0.8686552252107339,
+      "seconds": 362.1
+    },
+    {
+      "fold": 2,
+      "n_train": 11520,
+      "n_test": 2880,
+      "epochs": [
+        {
+          "epoch": 1,
+          "loss": 0.8763,
+          "seconds": 112.7
+        },
+        {
+          "epoch": 2,
+          "loss": 0.3282,
+          "seconds": 113.0
+        },
+        {
+          "epoch": 3,
+          "loss": 0.2308,
+          "seconds": 113.0
+        }
+      ],
+      "macro_f1": 0.879475238800418,
+      "seconds": 361.0
+    },
+    {
+      "fold": 3,
+      "n_train": 11520,
+      "n_test": 2880,
+      "epochs": [
+        {
+          "epoch": 1,
+          "loss": 0.914,
+          "seconds": 112.6
+        },
+        {
+          "epoch": 2,
+          "loss": 0.3314,
+          "seconds": 110.4
+        },
+        {
+          "epoch": 3,
+          "loss": 0.2279,
+          "seconds": 110.5
+        }
+      ],
+      "macro_f1": 0.8746356468872742,
+      "seconds": 355.3
+    },
+    {
+      "fold": 4,
+      "n_train": 11520,
+      "n_test": 2880,
+      "epochs": [
+        {
+          "epoch": 1,
+          "loss": 0.8548,
+          "seconds": 109.9
+        },
+        {
+          "epoch": 2,
+          "loss": 0.3209,
+          "seconds": 110.3
+        },
+        {
+          "epoch": 3,
+          "loss": 0.2277,
+          "seconds": 110.3
+        }
+      ],
+      "macro_f1": 0.8713564979046127,
+      "seconds": 352.1
+    }
+  ],
+  "per_fold_mean": 0.8735666043460624,
+  "per_fold_spread": 0.010820013589684097,
+  "pooled": {
+    "n": 14400,
+    "accuracy": 0.8735416666666667,
+    "macro_f1": 0.8735821662601951,
+    "majority_baseline": 0.1111111111111111,
+    "families": {
+      "n": 14400,
+      "correct": 12579,
+      "within_family_errors": 1705,
+      "across_family_errors": 116,
+      "within_family_rate": 0.11840277777777777,
+      "across_family_rate": 0.008055555555555555
+    },
+    "confusion_matrix": [
+      [
+        1509,
+        2,
+        0,
+        2,
+        3,
+        1,
+        1,
+        19,
+        63
+      ],
+      [
+        3,
+        1395,
+        154,
+        0,
+        5,
+        0,
+        36,
+        2,
+        5
+      ],
+      [
+        0,
+        107,
+        1391,
+        0,
+        0,
+        0,
+        98,
+        4,
+        0
+      ],
+      [
+        3,
+        0,
+        0,
+        1325,
+        227,
+        39,
+        5,
+        0,
+        1
+      ],
+      [
+        4,
+        8,
+        0,
+        253,
+        1272,
+        62,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        43,
+        65,
+        1489,
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        37,
+        116,
+        2,
+        0,
+        0,
+        1429,
+        6,
+        10
+      ],
+      [
+        10,
+        1,
+        2,
+        4,
+        2,
+        0,
+        5,
+        1446,
+        130
+      ],
+      [
+        53,
+        4,
+        1,
+        7,
+        2,
+        5,
+        12,
+        193,
+        1323
+      ]
+    ],
+    "labels": [
+      "2221",
+      "2330",
+      "2341",
+      "2511",
+      "2512",
+      "2514",
+      "5312",
+      "5321",
+      "5323"
+    ]
+  },
+  "pooled_interval": {
+    "macro_f1": 0.8735821662601951,
+    "ci_low": 0.8664006003529293,
+    "ci_high": 0.8804539636680356,
+    "n_employers": 2860,
+    "n_advertisements": 14400,
+    "n_rounds": 2000,
+    "seed": 11
+  }
+}

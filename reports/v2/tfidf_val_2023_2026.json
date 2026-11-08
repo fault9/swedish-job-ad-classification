@@ -1,0 +1,351 @@
+{
+  "method": "tfidf_logreg",
+  "input": "opening_job_wide",
+  "period": "2023_2026",
+  "seed": 42,
+  "n_trials": 17,
+  "trials": [
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.02,
+      "lowercase": true,
+      "val_macro_f1": 0.8086950925755374,
+      "vocab_size": 23427,
+      "seconds": 1.9
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.05,
+      "lowercase": true,
+      "val_macro_f1": 0.8176074110457908,
+      "vocab_size": 23427,
+      "seconds": 2.3
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.1,
+      "lowercase": true,
+      "val_macro_f1": 0.8215437668336979,
+      "vocab_size": 23427,
+      "seconds": 2.3
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.25,
+      "lowercase": true,
+      "val_macro_f1": 0.8354113865723938,
+      "vocab_size": 23427,
+      "seconds": 2.7
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.5,
+      "lowercase": true,
+      "val_macro_f1": 0.8392162742886466,
+      "vocab_size": 23427,
+      "seconds": 3.2
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 1.0,
+      "lowercase": true,
+      "val_macro_f1": 0.8390571115416736,
+      "vocab_size": 23427,
+      "seconds": 4.1
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 2.0,
+      "lowercase": true,
+      "val_macro_f1": 0.8363305566114064,
+      "vocab_size": 23427,
+      "seconds": 3.7
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.05,
+      "lowercase": false,
+      "val_macro_f1": 0.8039778998835285,
+      "vocab_size": 26741,
+      "seconds": 2.2
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.1,
+      "lowercase": false,
+      "val_macro_f1": 0.8145016693963985,
+      "vocab_size": 26741,
+      "seconds": 2.4
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 0.25,
+      "lowercase": false,
+      "val_macro_f1": 0.8253229381546517,
+      "vocab_size": 26741,
+      "seconds": 2.8
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "C": 1.0,
+      "lowercase": false,
+      "val_macro_f1": 0.8326653450858457,
+      "vocab_size": 26741,
+      "seconds": 4.1
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 1,
+      "C": 0.05,
+      "lowercase": true,
+      "val_macro_f1": 0.8172228167178538,
+      "vocab_size": 42746,
+      "seconds": 2.2
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 1,
+      "C": 0.1,
+      "lowercase": true,
+      "val_macro_f1": 0.8215072924253763,
+      "vocab_size": 42746,
+      "seconds": 3.1
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 3,
+      "C": 0.05,
+      "lowercase": true,
+      "val_macro_f1": 0.8211693220276414,
+      "vocab_size": 17496,
+      "seconds": 2.1
+    },
+    {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 3,
+      "C": 0.1,
+      "lowercase": true,
+      "val_macro_f1": 0.8224410900163117,
+      "vocab_size": 17496,
+      "seconds": 2.4
+    },
+    {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "C": 0.05,
+      "lowercase": true,
+      "val_macro_f1": 0.8056686725405899,
+      "vocab_size": 164875,
+      "seconds": 5.4
+    },
+    {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "C": 0.1,
+      "lowercase": true,
+      "val_macro_f1": 0.8056733151082627,
+      "vocab_size": 164875,
+      "seconds": 5.8
+    }
+  ],
+  "best": {
+    "ngram_range": [
+      1,
+      1
+    ],
+    "min_df": 2,
+    "C": 0.5,
+    "lowercase": true,
+    "val_macro_f1": 0.8392162742886466,
+    "vocab_size": 23427,
+    "seconds": 3.2
+  },
+  "validation": {
+    "n": 2277,
+    "accuracy": 0.8383838383838383,
+    "macro_f1": 0.8392162742886466,
+    "majority_baseline": 0.1111111111111111,
+    "families": {
+      "n": 2277,
+      "correct": 1909,
+      "within_family_errors": 343,
+      "across_family_errors": 25,
+      "within_family_rate": 0.15063680281071584,
+      "across_family_rate": 0.010979358805445762
+    },
+    "confusion_matrix": [
+      [
+        215,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        8,
+        28
+      ],
+      [
+        3,
+        202,
+        38,
+        1,
+        1,
+        0,
+        7,
+        1,
+        0
+      ],
+      [
+        0,
+        18,
+        215,
+        1,
+        0,
+        0,
+        19,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        196,
+        43,
+        12,
+        1,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        57,
+        185,
+        9,
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        32,
+        8,
+        213,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        13,
+        9,
+        1,
+        1,
+        2,
+        226,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        4,
+        0,
+        3,
+        231,
+        13
+      ],
+      [
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        17,
+        226
+      ]
+    ],
+    "labels": [
+      "2221",
+      "2330",
+      "2341",
+      "2511",
+      "2512",
+      "2514",
+      "5312",
+      "5321",
+      "5323"
+    ]
+  }
+}

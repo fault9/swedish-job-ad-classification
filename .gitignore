@@ -6,7 +6,13 @@ logs/
 
 # Advertisement data and review sheets. Never commit.
 data/
-reports/
+reports/*
+
+# The result summaries and figures are shared. The prediction files are not,
+# because some employers are listed by a person's name.
+!reports/v2/
+reports/v2/predictions_*
+reports/v2/*.npy
 
 # Excluded for now; quotes some advertisement text.
 docs/

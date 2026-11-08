@@ -1,0 +1,107 @@
+{
+  "period": "2023_2026",
+  "ngram": [
+    1,
+    1
+  ],
+  "min_df": 1,
+  "C": 0.5,
+  "rows": [
+    {
+      "strategy": "head",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 50725,
+      "val_macro_f1": 0.755195240678179,
+      "seconds": 25.0
+    },
+    {
+      "strategy": "gated",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 50188,
+      "val_macro_f1": 0.7568053049493818,
+      "seconds": 33.0
+    },
+    {
+      "strategy": "gated_wide",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 50090,
+      "val_macro_f1": 0.7624965917510507,
+      "seconds": 39.2
+    },
+    {
+      "strategy": "gated_wide_tail",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 48409,
+      "val_macro_f1": 0.6956573362599708,
+      "seconds": 39.7
+    },
+    {
+      "strategy": "skip_intro",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 48139,
+      "val_macro_f1": 0.8038154919789748,
+      "seconds": 22.9
+    },
+    {
+      "strategy": "skip_intro_wide",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 48218,
+      "val_macro_f1": 0.8089724691836265,
+      "seconds": 24.2
+    },
+    {
+      "strategy": "opening_job",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 49260,
+      "val_macro_f1": 0.821900042381614,
+      "seconds": 23.8
+    },
+    {
+      "strategy": "opening_job_wide",
+      "budget": 200,
+      "median_words": 200,
+      "vocab_size": 49356,
+      "val_macro_f1": 0.8262224813060195,
+      "seconds": 24.1
+    },
+    {
+      "strategy": "head",
+      "budget": 250,
+      "median_words": 250,
+      "vocab_size": 55873,
+      "val_macro_f1": 0.7992610080780433,
+      "seconds": 23.7
+    },
+    {
+      "strategy": "head",
+      "budget": 300,
+      "median_words": 300,
+      "vocab_size": 59698,
+      "val_macro_f1": 0.8227463665062563,
+      "seconds": 24.5
+    },
+    {
+      "strategy": "none",
+      "budget": 0,
+      "median_words": 425,
+      "vocab_size": 69678,
+      "val_macro_f1": 0.8315340919490966,
+      "seconds": 25.6
+    }
+  ],
+  "best": {
+    "strategy": "none",
+    "budget": 0,
+    "median_words": 425,
+    "vocab_size": 69678,
+    "val_macro_f1": 0.8315340919490966,
+    "seconds": 25.6
+  }
+}

@@ -34,7 +34,9 @@ python src/error_overlap.py      # shared errors
 python src/plot_confusion.py     # confusion matrices
 ```
 
-Results are saved in `reports/v2/`.
+Results are saved in `reports/v2/`. The scores, comparisons and figures are in
+the repository. The prediction files per advertisement are not, because some
+employers are listed by a person's name.
 
 ## Data and models
 
